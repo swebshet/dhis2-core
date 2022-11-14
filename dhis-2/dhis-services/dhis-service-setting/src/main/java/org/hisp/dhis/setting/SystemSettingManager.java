@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.hisp.dhis.system.util.SerializableOptional;
+
 /**
  * @author Stian Strandli
  * @author Lars Helge Overland
@@ -88,6 +90,17 @@ public interface SystemSettingManager
      * @return the setting value.
      */
     Serializable getSystemSetting( SettingKey key, Serializable defaultValue );
+
+    /**
+     * Get system setting {@link SerializableOptional}. The return object is
+     * never null in order to cache requests for system settings which have no
+     * value or default value.
+     *
+     * @param name the system setting name.
+     * @param defaultValue the default value for the system setting.
+     * @return an optional system setting value.
+     */
+    SerializableOptional getSystemSettingOptional( String name, Serializable defaultValue );
 
     /**
      * Returns the translation for given setting key and locale or empty

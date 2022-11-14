@@ -181,7 +181,6 @@ public class DefaultSystemSettingManager
      * cache hits.
      */
     @Override
-    @Transactional( readOnly = true )
     public Serializable getSystemSetting( SettingKey key )
     {
         return getSystemSetting( key, key.getDefaultValue() );
@@ -193,7 +192,6 @@ public class DefaultSystemSettingManager
      * cache hits.
      */
     @Override
-    @Transactional( readOnly = true )
     public Serializable getSystemSetting( SettingKey key, Serializable defaultValue )
     {
         SerializableOptional value = settingCache.get( key.getName(),
@@ -202,18 +200,11 @@ public class DefaultSystemSettingManager
         return defaultIfNull( value.get(), defaultValue );
     }
 
-    /**
-     * Get system setting {@link SerializableOptional}. The return object is
-     * never null in order to cache requests for system settings which have no
-     * value or default value.
-     *
-     * @param name the system setting name.
-     * @param defaultValue the default value for the system setting.
-     * @return an optional system setting value.
-     */
-    private SerializableOptional getSystemSettingOptional( String name, Serializable defaultValue )
+    @Override
+    @Transactional( readOnly = true )
+    public SerializableOptional getSystemSettingOptional( String name, Serializable defaultValue )
     {
-        SystemSetting setting = systemSettingStore.getByName( name );
+        SystemSetting setting = systemSettingStore.getByNameTx( name );
 
         if ( setting != null && setting.hasValue() )
         {

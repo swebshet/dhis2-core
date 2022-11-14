@@ -36,6 +36,7 @@ import org.hisp.dhis.setting.SystemSettingStore;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author Lars Helge Overland
@@ -48,6 +49,13 @@ public class HibernateSystemSettingStore
         ApplicationEventPublisher publisher )
     {
         super( sessionFactory, jdbcTemplate, publisher, SystemSetting.class, true );
+    }
+
+    @Override
+    @Transactional
+    public SystemSetting getByNameTx( String name )
+    {
+        return getByName( name );
     }
 
     @Override
