@@ -27,13 +27,21 @@
  */
 package org.hisp.dhis.tracker.validation.experiment;
 
-public interface Validator<T, R, E>
+import java.util.Optional;
+
+// TODO looks a lot like the Function interface from Java utils
+// TODO should E be List<E> or some type that is a semi-group
+public interface Validator<T, E>
 {
 
-    Validation<R, E> validate( T input );
+    Optional<E> apply( T input );
 
-    // TODO implement add to chain validations
-
-    // TODO why does the validator need an apply?
-
+    // default Validator<T, E> and(Validator<T, E> other) {
+    //
+    // }
+    //
+    // default <S> Validator<S, E> and(Validator before, Function<T, S> value) {
+    // Objects.requireNonNull(before);
+    // return (T t) -> validate(before.validate(value.apply(t)));
+    // }
 }

@@ -48,9 +48,9 @@ import com.opensymphony.xwork2.ActionInvocation;
 import com.opensymphony.xwork2.Result;
 
 /**
- * A custom Result type for chart data. Built on top of
+ * A custom Errors type for chart data. Built on top of
  * <a href="http://www.jfree.org/jfreechart/" target="_blank">JFreeChart</a>.
- * When executed this Result will write the given chart as a PNG to the servlet
+ * When executed this Errors will write the given chart as a PNG to the servlet
  * output stream.
  *
  * @author Bernard Choi

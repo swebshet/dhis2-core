@@ -70,7 +70,7 @@ public class PlainTextErrorResult
     }
 
     // -------------------------------------------------------------------------
-    // Result implementation
+    // Errors implementation
     // -------------------------------------------------------------------------
 
     @Override

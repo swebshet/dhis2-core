@@ -73,7 +73,7 @@ public class GridJasperResult
     }
 
     // -------------------------------------------------------------------------
-    // Result implementation
+    // Errors implementation
     // -------------------------------------------------------------------------
 
     @Override

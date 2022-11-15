@@ -28,33 +28,26 @@
 package org.hisp.dhis.tracker.validation.experiment;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-import static org.hisp.dhis.tracker.validation.experiment.Validation.Fail.fail;
-import static org.hisp.dhis.tracker.validation.experiment.Validation.Success.success;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
-// shows that in theory the validator can return a different type R as a result than what it validates
-// we might not need this as we don't really care about the return value other than the Success
-// as we do not partially apply a constructor that needs these.
-// but an example is that a validator takes a String representing a date, parses it and if successful constructs a Date
-public class DateValidator implements Validator<Enrollment, Enrollment, TrackerErrorCode>
+public class DateValidator implements Validator<Enrollment, TrackerErrorCode>
 {
 
-    // TODO what if I want to just write validation functions as a bunch of
-    // static methods
-    // TODO in this case the validator would it be better written as
-    // validate(Instant enrolledAt)? and then outside we would need to adapt it
-    // so that the result of getEnrolledAt is passed in
-    public Validation<Enrollment, TrackerErrorCode> validate( Enrollment enrollment )
+    // TODO this should only take in the enrolledAt date; adapt once I implement
+    // the getter func
+    public Optional<TrackerErrorCode> apply( Enrollment enrollment )
     {
         if ( Objects.isNull( enrollment.getEnrolledAt() ) )
         {
-            return fail( E1025 );
+            return Optional.of( E1025 );
         }
 
-        return success( enrollment );
+        return Optional.empty();
     }
+
 }

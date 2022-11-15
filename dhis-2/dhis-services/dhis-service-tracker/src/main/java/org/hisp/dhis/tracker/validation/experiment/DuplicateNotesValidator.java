@@ -27,45 +27,47 @@
  */
 package org.hisp.dhis.tracker.validation.experiment;
 
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
-import org.junit.jupiter.api.Test;
 
-class DateValidatorTest
+public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErrorCode>
 {
-    @Test
-    void testValidationFailsIfEnrolledAtDateIsNull()
+
+    @Override
+    public Optional<TrackerErrorCode> apply( List<Note> input )
     {
+        final List<Note> duplicates = new ArrayList<>();
+        for ( Note note : input )
+        {
+            if ( isNotEmpty( note.getValue() ) ) // Ignore notes with no text
+            {
+                // If a note having the same UID already exist in the db, raise
+                // warning, ignore the note and continue
+                // TODO adapt signature(s) to pass in TrackerPreheat or the
+                // TrackerBundle
+                if ( isNotEmpty( note.getNote() ) ) // && preheat.getNote(
+                                                    // note.getNote()
+                                                    // ).isPresent() )
+                {
+                    duplicates.add( note );
+                }
+            }
+        }
 
-        DateValidator validator = new DateValidator();
+        if ( duplicates.isEmpty() )
+        {
+            return Optional.empty();
+        }
 
-        Enrollment enrollment = new Enrollment();
-
-        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
-
-        assertFalse( validation.isEmpty() );
-        assertEquals( E1025, validation.get() );
-    }
-
-    @Test
-    void testValidationSucceedsIfEnrolledAtDateIsNotNull()
-    {
-
-        DateValidator validator = new DateValidator();
-
-        Enrollment enrollment = new Enrollment();
-        enrollment.setEnrolledAt( Instant.now() );
-
-        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
-
-        assertTrue( validation.isEmpty() );
+        // TODO in the original validation we return a TrackerWarning; we could
+        // create a sum type of TrackerError/Warning
+        // so a validation can return either
+        return Optional.of( TrackerErrorCode.E1119 );
     }
 }

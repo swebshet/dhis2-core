@@ -27,51 +27,53 @@
  */
 package org.hisp.dhis.tracker.validation.experiment;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
 
+import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
-// TODO adapt to result vs the other class being validation
-// I think my confusion comes also a little bit from the names
-// this is the semi-group collecting the errors that is part of the sum type Validation
-public class Errors
+// TODO this one here could actually be defined as Validator<Enrollment, List<TrackerErrorCode>> so I can implement the aggregation
+public class EnrollmentValidator implements Validator<Enrollment, TrackerErrorCode>
 {
-    // TODO implement the short-circuiting behavior we need for FAIL_FAST by
-    // making it a monad and a semi-group
 
-    private final Set<TrackerErrorCode> errors;
+    private final List<Validator<Enrollment, TrackerErrorCode>> validators = new ArrayList<>();
 
-    public Errors()
+    // TODO validators should be composable, so return type
+    // Validator<Enrollment, TrackerErrorCode>
+    // should work
+    // there should be a default implementation as the Validator interface
+    // should stay functional meaning I want people
+    // to also be able to implement one via a lambda
+    // How does that play with the idea to return Validator<Enrollment,
+    // List<TrackerErrorCode>> from here?
+    public EnrollmentValidator and( Validator<Enrollment, TrackerErrorCode> other )
     {
-        this.errors = new HashSet<>();
+        validators.add( other );
+        return this;
     }
 
-    public Errors( Set<TrackerErrorCode> errors )
+    // Same as above
+    public <S> EnrollmentValidator and( Function<Enrollment, S> value, Validator<S, TrackerErrorCode> other )
     {
-        this.errors = errors;
+        validators.add( e -> other.apply( value.apply( e ) ) );
+        return this;
     }
 
-    public Errors( TrackerErrorCode error )
-    {
-        this.errors = Collections.singleton( error );
-    }
-
-    public Set<TrackerErrorCode> getErrors()
-    {
-        return errors;
-    }
-
-    // this is what makes it a semi-group; "binary" if you count itself as an
-    // arg operation that is associative
-    public Errors append( Errors other )
+    @Override
+    public Optional<TrackerErrorCode> apply( Enrollment input )
     {
 
-        Set<TrackerErrorCode> joined = Stream.concat( errors.stream(), other.getErrors().stream() )
-            .collect( Collectors.toSet() );
-        return new Errors( joined );
+        Optional<TrackerErrorCode> error = Optional.empty();
+        for ( Validator<Enrollment, TrackerErrorCode> validator : validators )
+        {
+            error = validator.apply( input );
+            // TODO implement short circuit behavior
+        }
+
+        // TODO implement aggregation of errors
+        return error;
     }
 }

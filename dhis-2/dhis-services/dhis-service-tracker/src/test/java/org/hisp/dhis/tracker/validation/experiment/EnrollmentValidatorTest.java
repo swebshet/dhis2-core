@@ -27,76 +27,37 @@
  */
 package org.hisp.dhis.tracker.validation.experiment;
 
-import lombok.RequiredArgsConstructor;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-// TODO it should implement an interface that Errors will also implement
-// TODO switch order of T and E as this is in accordance with Either where errors are usually on the left
-public interface Validation<T, E>
+import java.util.Optional;
+
+import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.junit.jupiter.api.Test;
+
+class EnrollmentValidatorTest
 {
 
-    boolean isSuccess();
-
-    T get();
-
-    E getFail();
-
-    @RequiredArgsConstructor
-    class Success<T, E> implements Validation<T, E>
+    @Test
+    void testComposition()
     {
 
-        private final T t;
+        Enrollment enrollment = new Enrollment();
 
-        public static <T, E> Success<T, E> success( T t )
-        {
-            return new Success<>( t );
-        }
+        DateValidator dateValidator = new DateValidator();
+        DuplicateNotesValidator notesValidator = new DuplicateNotesValidator();
 
-        @Override
-        public boolean isSuccess()
-        {
-            return true;
-        }
+        EnrollmentValidator validator = new EnrollmentValidator()
+            .and( dateValidator )
+            .and( e -> e.getNotes(), notesValidator );
 
-        @Override
-        public T get()
-        {
-            return t;
-        }
+        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
 
-        @Override
-        public E getFail()
-        {
-            throw new IllegalStateException();
-        }
+        // TODO implement aggregating all errors next
+        assertFalse( validation.isEmpty() );
+        assertEquals( E1025, validation.get() );
     }
 
-    @RequiredArgsConstructor
-    class Fail<T, E> implements Validation<T, E>
-    {
-
-        private final E e;
-
-        public static <T, E> Fail<T, E> fail( E e )
-        {
-            return new Fail<>( e );
-        }
-
-        @Override
-        public boolean isSuccess()
-        {
-            return false;
-        }
-
-        @Override
-        public T get()
-        {
-            throw new IllegalStateException();
-        }
-
-        @Override
-        public E getFail()
-        {
-            return e;
-        }
-    }
 }
