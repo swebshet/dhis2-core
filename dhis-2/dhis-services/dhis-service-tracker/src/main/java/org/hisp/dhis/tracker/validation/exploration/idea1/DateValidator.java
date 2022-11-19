@@ -25,47 +25,29 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.experiment;
+package org.hisp.dhis.tracker.validation.exploration.idea1;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
-import org.junit.jupiter.api.Test;
 
-class DateValidatorTest
+public class DateValidator implements SimpleValidator<Enrollment, TrackerErrorCode>
 {
-    @Test
-    void testValidationFailsIfEnrolledAtDateIsNull()
+
+    // TODO this should only take in the enrolledAt date; adapt once I implement
+    // the getter func
+    public Optional<TrackerErrorCode> apply( Enrollment enrollment )
     {
+        if ( Objects.isNull( enrollment.getEnrolledAt() ) )
+        {
+            return Optional.of( E1025 );
+        }
 
-        DateValidator validator = new DateValidator();
-
-        Enrollment enrollment = new Enrollment();
-
-        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
-
-        assertFalse( validation.isEmpty() );
-        assertEquals( E1025, validation.get() );
+        return Optional.empty();
     }
 
-    @Test
-    void testValidationSucceedsIfEnrolledAtDateIsNotNull()
-    {
-
-        DateValidator validator = new DateValidator();
-
-        Enrollment enrollment = new Enrollment();
-        enrollment.setEnrolledAt( Instant.now() );
-
-        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
-
-        assertTrue( validation.isEmpty() );
-    }
 }

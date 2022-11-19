@@ -25,39 +25,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.experiment;
-
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+package org.hisp.dhis.tracker.validation.exploration.idea1;
 
 import java.util.Optional;
 
-import org.hisp.dhis.tracker.domain.Enrollment;
-import org.hisp.dhis.tracker.report.TrackerErrorCode;
-import org.junit.jupiter.api.Test;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
-class EnrollmentValidatorTest
+/**
+ * Validator that is self-contained not needing any context to decide whether a
+ * given input is valid.
+ *
+ * @param <T> type of input to be validated
+ * @param <E> type of error found during validation
+ */
+@FunctionalInterface
+public interface SimpleValidator<T, E> extends Validator<T, E>
 {
 
-    @Test
-    void testComposition()
+    Optional<E> apply( T input );
+
+    default Optional<E> apply( TrackerBundle bundle, T input )
     {
-
-        Enrollment enrollment = new Enrollment();
-
-        DateValidator dateValidator = new DateValidator();
-        DuplicateNotesValidator notesValidator = new DuplicateNotesValidator();
-
-        EnrollmentValidator validator = new EnrollmentValidator()
-            .and( dateValidator )
-            .and( e -> e.getNotes(), notesValidator );
-
-        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
-
-        // TODO implement aggregating all errors next
-        assertFalse( validation.isEmpty() );
-        assertEquals( E1025, validation.get() );
+        return apply( input );
     }
-
 }

@@ -25,29 +25,23 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.experiment;
+package org.hisp.dhis.tracker.validation.exploration.idea1;
 
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-
-import java.util.Objects;
 import java.util.Optional;
 
-import org.hisp.dhis.tracker.domain.Enrollment;
-import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
-public class DateValidator implements Validator<Enrollment, TrackerErrorCode>
+// TODO is there a way to limit E. Most Validators should only return one error so they stay small but we also need
+// Validators that are built using smaller ones and aggregate errors they find.
+// Maybe I am trying to fit 2 things together that do not fit. So maybe 2 interfaces are needed.
+@FunctionalInterface
+public interface Validator<T, E>
 {
 
-    // TODO this should only take in the enrolledAt date; adapt once I implement
-    // the getter func
-    public Optional<TrackerErrorCode> apply( Enrollment enrollment )
-    {
-        if ( Objects.isNull( enrollment.getEnrolledAt() ) )
-        {
-            return Optional.of( E1025 );
-        }
-
-        return Optional.empty();
-    }
-
+    // TODO TrackerBundle can be interpreted as a kind of ValidationContext.
+    // Ideally we provide an interface that is
+    // read-only and much narrower than the bundle or even the preheat. The
+    // bundle contains the entire payload so this can dilute the narrow
+    // interface defined here again.
+    Optional<E> apply( TrackerBundle bundle, T input );
 }

@@ -25,55 +25,47 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.experiment;
+package org.hisp.dhis.tracker.validation.exploration.idea1;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.time.Instant;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.junit.jupiter.api.Test;
 
-// TODO this one here could actually be defined as Validator<Enrollment, List<TrackerErrorCode>> so I can implement the aggregation
-public class EnrollmentValidator implements Validator<Enrollment, TrackerErrorCode>
+class DateValidatorTest
 {
-
-    private final List<Validator<Enrollment, TrackerErrorCode>> validators = new ArrayList<>();
-
-    // TODO validators should be composable, so return type
-    // Validator<Enrollment, TrackerErrorCode>
-    // should work
-    // there should be a default implementation as the Validator interface
-    // should stay functional meaning I want people
-    // to also be able to implement one via a lambda
-    // How does that play with the idea to return Validator<Enrollment,
-    // List<TrackerErrorCode>> from here?
-    public EnrollmentValidator and( Validator<Enrollment, TrackerErrorCode> other )
+    @Test
+    void testValidationFailsIfEnrolledAtDateIsNull()
     {
-        validators.add( other );
-        return this;
+
+        DateValidator validator = new DateValidator();
+
+        Enrollment enrollment = new Enrollment();
+
+        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
+
+        assertFalse( validation.isEmpty() );
+        assertEquals( E1025, validation.get() );
     }
 
-    // Same as above
-    public <S> EnrollmentValidator and( Function<Enrollment, S> value, Validator<S, TrackerErrorCode> other )
-    {
-        validators.add( e -> other.apply( value.apply( e ) ) );
-        return this;
-    }
-
-    @Override
-    public Optional<TrackerErrorCode> apply( Enrollment input )
+    @Test
+    void testValidationSucceedsIfEnrolledAtDateIsNotNull()
     {
 
-        Optional<TrackerErrorCode> error = Optional.empty();
-        for ( Validator<Enrollment, TrackerErrorCode> validator : validators )
-        {
-            error = validator.apply( input );
-            // TODO implement short circuit behavior
-        }
+        DateValidator validator = new DateValidator();
 
-        // TODO implement aggregation of errors
-        return error;
+        Enrollment enrollment = new Enrollment();
+        enrollment.setEnrolledAt( Instant.now() );
+
+        Optional<TrackerErrorCode> validation = validator.apply( enrollment );
+
+        assertTrue( validation.isEmpty() );
     }
 }

@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.experiment;
+package org.hisp.dhis.tracker.validation.exploration.idea1;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
@@ -40,7 +41,7 @@ public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErr
 {
 
     @Override
-    public Optional<TrackerErrorCode> apply( List<Note> input )
+    public Optional<TrackerErrorCode> apply( TrackerBundle bundle, List<Note> input )
     {
         final List<Note> duplicates = new ArrayList<>();
         for ( Note note : input )
@@ -49,11 +50,7 @@ public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErr
             {
                 // If a note having the same UID already exist in the db, raise
                 // warning, ignore the note and continue
-                // TODO adapt signature(s) to pass in TrackerPreheat or the
-                // TrackerBundle
-                if ( isNotEmpty( note.getNote() ) ) // && preheat.getNote(
-                                                    // note.getNote()
-                                                    // ).isPresent() )
+                if ( isNotEmpty( note.getNote() ) && bundle.getPreheat().getNote( note.getNote() ).isPresent() )
                 {
                     duplicates.add( note );
                 }
