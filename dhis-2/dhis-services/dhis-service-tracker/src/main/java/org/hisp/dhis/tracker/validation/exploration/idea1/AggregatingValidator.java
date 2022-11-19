@@ -37,11 +37,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
-import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
 // TODO implement short circuit behavior: either in here or make this a base class/interface with default implementations for
 // and and then implement an AggregatingValidator and a FailFastValidator based on this
-public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCode>>
+public class AggregatingValidator<T> implements Validator<T, List<Error>>
 {
 
     // TODO: adding the validateEach complicated the rest of the code. Since I
@@ -50,9 +49,9 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
     // I need to use closures that return a List<Validator> that are applied on
     // call to apply. So for each of the elements
     // in a collection there will be a Validator with a closure on the element.
-    private final List<Function<T, List<Validator<T, TrackerErrorCode>>>> validators = new ArrayList<>();
+    private final List<Function<T, List<Validator<T, Error>>>> validators = new ArrayList<>();
 
-    public AggregatingValidator<T> validate( Validator<T, TrackerErrorCode> validator )
+    public AggregatingValidator<T> validate( Validator<T, Error> validator )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
@@ -60,7 +59,7 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
         return this;
     }
 
-    public <S> AggregatingValidator<T> validate( Function<T, S> map, Validator<S, TrackerErrorCode> validator )
+    public <S> AggregatingValidator<T> validate( Function<T, S> map, Validator<S, Error> validator )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
@@ -71,18 +70,19 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
     }
 
     public <C, S> AggregatingValidator<T> validateEach( Function<T, Collection<C>> mapToEach, Function<C, S> map,
-        Predicate<S> validator, TrackerErrorCode error )
+        Predicate<S> validator, Function<S, Error> error )
     {
 
         validators.add(
-            input -> mapToEach.apply( input ).stream().map( i -> (Validator<T, TrackerErrorCode>) ( bundle, __ ) -> {
+            input -> mapToEach.apply( input ).stream().map( i -> (Validator<T, Error>) ( bundle, __ ) -> {
 
-                if ( validator.test( map.apply( i ) ) )
+                S mappedInput = map.apply( i );
+                if ( validator.test( mappedInput ) )
                 {
                     return Optional.empty();
                 }
 
-                return Optional.of( error );
+                return Optional.of( error.apply( mappedInput ) );
 
             } ).collect( Collectors.toList() ) );
 
@@ -101,24 +101,25 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
      * @return
      * @param <S> type on which the predicate will be evaluated
      */
-    public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> validator, TrackerErrorCode error )
+    public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> validator, Function<S, Error> error )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
         validators.add( __ -> Collections.singletonList( ( bundle, input ) -> {
 
-            if ( validator.test( map.apply( input ) ) )
+            S mappedInput = map.apply( input );
+            if ( validator.test( mappedInput ) )
             {
                 return Optional.empty();
             }
 
-            return Optional.of( error );
+            return Optional.of( error.apply( mappedInput ) );
 
         } ) );
         return this;
     }
 
-    public AggregatingValidator<T> validate( Predicate<T> validator, TrackerErrorCode error )
+    public AggregatingValidator<T> validate( Predicate<T> validator, Function<T, Error> error )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
@@ -129,22 +130,22 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
                 return Optional.empty();
             }
 
-            return Optional.of( error );
+            return Optional.of( error.apply( input ) );
 
         } ) );
         return this;
     }
 
     @Override
-    public Optional<List<TrackerErrorCode>> apply( TrackerBundle bundle, T input )
+    public Optional<List<Error>> apply( TrackerBundle bundle, T input )
     {
-        List<TrackerErrorCode> errors = new ArrayList<>();
+        List<Error> errors = new ArrayList<>();
         // TODO this can likely be written in a cleaner way
-        for ( Function<T, List<Validator<T, TrackerErrorCode>>> v : validators )
+        for ( Function<T, List<Validator<T, Error>>> v : validators )
         {
-            for ( Validator<T, TrackerErrorCode> validator : v.apply( input ) )
+            for ( Validator<T, Error> validator : v.apply( input ) )
             {
-                Optional<TrackerErrorCode> error = validator.apply( bundle, input );
+                Optional<Error> error = validator.apply( bundle, input );
                 error.ifPresent( errors::add );
             }
         }

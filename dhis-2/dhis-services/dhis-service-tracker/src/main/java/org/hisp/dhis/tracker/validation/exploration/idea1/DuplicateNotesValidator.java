@@ -29,9 +29,10 @@ package org.hisp.dhis.tracker.validation.exploration.idea1;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Note;
@@ -41,30 +42,37 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 
 /**
  * Would replace {@link EnrollmentNoteValidationHook} specifically
- * {@link ValidationUtils.validateNotes} as it's not concerned with Enrollments
+ * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
  * itself.
  */
-public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErrorCode>
+public class DuplicateNotesValidator implements Validator<List<Note>, Error>
 {
 
-    public static Validator<List<Note>, TrackerErrorCode> noDuplicateNotes()
+    public static Validator<List<Note>, Error> noDuplicateNotes()
     {
         return new DuplicateNotesValidator();
     }
 
     @Override
-    public Optional<TrackerErrorCode> apply( TrackerBundle bundle, List<Note> input )
+    public Optional<Error> apply( TrackerBundle bundle, List<Note> input )
     {
-        final List<Note> duplicates = new ArrayList<>();
+        final Set<String> duplicates = new HashSet<>();
         for ( Note note : input )
         {
             if ( isNotEmpty( note.getValue() ) ) // Ignore notes with no text
             {
+                // TODO this should not be allowed in our validations the
+                // original one is mutating the notes
+                // so to preserve the previous behavior we would need to find
+                // another way. If we pre-process the notes
+                // and remove duplicates we will not be able to issue a warning
+                // :grimacing:
+
                 // If a note having the same UID already exist in the db, raise
                 // warning, ignore the note and continue
                 if ( isNotEmpty( note.getNote() ) && bundle.getPreheat().getNote( note.getNote() ).isPresent() )
                 {
-                    duplicates.add( note );
+                    duplicates.add( note.getNote() );
                 }
             }
         }
@@ -77,6 +85,11 @@ public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErr
         // TODO in the original validation we return a TrackerWarning; we could
         // create a sum type of TrackerError/Warning
         // so a validation can return either
-        return Optional.of( TrackerErrorCode.E1119 );
+
+        String uids = String.join( ",", duplicates );
+        // TODO this should ideally already fill in the error message like
+        // error(E1119, args)
+        Error err = new Error( TrackerErrorCode.E1119, uids );
+        return Optional.of( err );
     }
 }

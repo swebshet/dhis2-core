@@ -40,6 +40,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
@@ -106,19 +107,26 @@ class AggregatingValidatorTest
             note( "invalid1", "note 1 with invalid uid" ),
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
+        // TODO extract helper? missingField() for E1122
+        // or some factory so it reads nicer
+        // TODO E1048 is weird. Should it not be property or field "enrollment"
+        // has an invalid UID `yyy`, whats Object in this error message?
+
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
-            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
-            .validate( e -> !e.getOrgUnit().isBlank(), E1122 ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(), E1122 ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, E1122 ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getEnrolledAt, Objects::nonNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, uid -> new Error( E1048, uid ) ) // PreCheckUidValidationHook
+            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid,
+                uid -> new Error( E1048, uid ) ) // PreCheckUidValidationHook
+            .validate( e -> !e.getOrgUnit().isBlank(), __ -> new Error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getProgram().isBlank(), __ -> new Error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
+                __ -> new Error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( Enrollment::getEnrolledAt, Objects::nonNull, date -> new Error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
-        Optional<List<TrackerErrorCode>> validation = validator.apply( bundle, enrollment );
+        Optional<List<Error>> validation = validator.apply( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
-        List<TrackerErrorCode> errors = validation.get();
+        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
         assertContainsOnly( List.of( E1048, E1048, E1048, E1122, E1025, E1119 ), errors );
     }
 
