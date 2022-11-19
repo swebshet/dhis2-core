@@ -116,6 +116,23 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
         return this;
     }
 
+    public AggregatingValidator<T> validate( Predicate<T> other, TrackerErrorCode error )
+    {
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        validators.add( __ -> Collections.singletonList( ( bundle, input ) -> {
+
+            if ( other.test( input ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error );
+
+        } ) );
+        return this;
+    }
+
     @Override
     public Optional<List<TrackerErrorCode>> apply( TrackerBundle bundle, T input )
     {

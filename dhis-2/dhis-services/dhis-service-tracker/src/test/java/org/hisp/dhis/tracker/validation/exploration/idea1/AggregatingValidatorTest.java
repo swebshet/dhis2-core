@@ -30,6 +30,7 @@ package org.hisp.dhis.tracker.validation.exploration.idea1;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea1.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,20 +45,25 @@ import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 import org.hisp.dhis.tracker.report.ValidationErrorReporter;
 import org.hisp.dhis.tracker.validation.hooks.EnrollmentDateValidationHook;
+import org.hisp.dhis.tracker.validation.hooks.PreCheckMandatoryFieldsValidationHook;
 import org.hisp.dhis.tracker.validation.hooks.PreCheckUidValidationHook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import io.micrometer.common.util.StringUtils;
 
 /**
  * Shows how client code using the {@link AggregatingValidator} would look like.
  *
  * Validations here include validations we have for example in
  * {@link PreCheckUidValidationHook#validateEnrollment(ValidationErrorReporter, TrackerBundle, Enrollment)}
+ * {@link PreCheckMandatoryFieldsValidationHook}
  * {@link EnrollmentDateValidationHook#validateMandatoryDates(ValidationErrorReporter, Enrollment)}
  * {@link org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook}
  */
@@ -82,12 +88,17 @@ class AggregatingValidatorTest
     void testValidationWithMultipleErrors()
     {
         Enrollment enrollment = new Enrollment();
+        enrollment.setOrgUnit( MetadataIdentifier.ofUid( "Nav6inZRw1u" ) );
+        // validation error: program not set
+        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
+        enrollment.setTrackedEntity( "PuBvJxDB73z" );
+
         // validation error: invalid UID
-        enrollment.setEnrollment( "invalidUid" );
+        enrollment.setEnrollment( "invalid" );
 
         // validation error: enrolledAt date is null
 
-        // validation error: duplicate note
+        // validation error: duplicate note Kj6vYde4LHh
         when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
         enrollment.setNotes( List.of(
             note( "Kj6vYde4LHh", "my duplicate note" ),
@@ -98,6 +109,9 @@ class AggregatingValidatorTest
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
             .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
             .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
+            .validate( e -> !e.getOrgUnit().isBlank(), E1122 ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getProgram().isBlank(), E1122 ) // PreCheckMandatoryFieldsValidationHook
+            .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, E1122 ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getEnrolledAt, Objects::nonNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
@@ -105,7 +119,7 @@ class AggregatingValidatorTest
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.get();
-        assertContainsOnly( List.of( E1048, E1048, E1048, E1025, E1119 ), errors );
+        assertContainsOnly( List.of( E1048, E1048, E1048, E1122, E1025, E1119 ), errors );
     }
 
     private static Note note( String uid, String value )
