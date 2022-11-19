@@ -29,6 +29,13 @@ Optional<E> apply(T input);
 if no context is needed. I added the TrackerBundle just because I did not want to spend time on thinking about a new
 narrow interface like a ValidationContext. We definitely should before implementing any new solution.
 
+## Assumptions
+
+* Validations are independent: right now the implementation assumes Validators are independent of each other. If this
+  assumption does not hold true for all Validators we would need to adapt how Validators are connected i.e. build a tree
+  rather than a list. Right now that is in the AggregatingValidator. How does `removeOnError` play into this again? Does
+  this already invalidate this assumption?
+
 ## TODO
 
 * think about returning an error with the error message args
