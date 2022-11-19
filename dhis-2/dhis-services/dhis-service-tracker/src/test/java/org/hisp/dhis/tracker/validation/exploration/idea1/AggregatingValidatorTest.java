@@ -27,8 +27,11 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
+import static java.util.function.Predicate.not;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
+import static org.hisp.dhis.tracker.validation.exploration.idea1.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
@@ -84,11 +88,16 @@ class AggregatingValidatorTest
         when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
         enrollment.setNotes( List.of( Note.builder().note( "Kj6vYde4LHh" ).value( "my duplicate note" ).build() ) );
 
-        DuplicateNotesValidator notesValidator = new DuplicateNotesValidator();
-
+        // TODO how to make the code easier to read in terms the methods being
+        // the negation of what i would expect.
+        // validate(not(isValdUid))
+        // should actually read
+        // validate(isValidUid)
+        // or is another name than validate better?
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .and( Enrollment::getEnrolledAt, Objects::isNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
-            .and( Enrollment::getNotes, notesValidator );
+            .validate( Enrollment::getEnrollment, not( CodeGenerator::isValidUid ), E1048 )
+            .validate( Enrollment::getEnrolledAt, Objects::isNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
+            .validate( Enrollment::getNotes, noDuplicateNotes() );
 
         Optional<List<TrackerErrorCode>> validation = validator.apply( bundle, enrollment );
 

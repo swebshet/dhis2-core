@@ -43,4 +43,6 @@ narrow interface like a ValidationContext. We definitely should before implement
   usually they also need the UID which I want to avoid as a simple
   Validator should not need to know about the
   root its validating the field on
+* how to build a more DLS like version? For validations that are super common like is this field a UID?
+* how to apply a validation on a Collection of the type a Validation is able to work on
 * play with a more complex validation

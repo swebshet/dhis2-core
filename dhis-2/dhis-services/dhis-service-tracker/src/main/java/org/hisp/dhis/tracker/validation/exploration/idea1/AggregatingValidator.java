@@ -43,20 +43,20 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
 
     private final List<Validator<T, TrackerErrorCode>> validators = new ArrayList<>();
 
-    public AggregatingValidator<T> and( Validator<T, TrackerErrorCode> other )
+    public AggregatingValidator<T> validate( Validator<T, TrackerErrorCode> other )
     {
         validators.add( other );
         return this;
     }
 
     // Same as above
-    public <S> AggregatingValidator<T> and( Function<T, S> value, Validator<S, TrackerErrorCode> other )
+    public <S> AggregatingValidator<T> validate( Function<T, S> value, Validator<S, TrackerErrorCode> other )
     {
         validators.add( ( bundle, input ) -> other.apply( bundle, value.apply( input ) ) );
         return this;
     }
 
-    public <S> AggregatingValidator<T> and( Function<T, S> value, Predicate<S> other, TrackerErrorCode error )
+    public <S> AggregatingValidator<T> validate( Function<T, S> value, Predicate<S> other, TrackerErrorCode error )
     {
         validators.add( ( bundle, input ) -> {
 

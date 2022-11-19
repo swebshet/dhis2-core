@@ -47,6 +47,11 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErrorCode>
 {
 
+    public static Validator<List<Note>, TrackerErrorCode> noDuplicateNotes()
+    {
+        return new DuplicateNotesValidator();
+    }
+
     @Override
     public Optional<TrackerErrorCode> apply( TrackerBundle bundle, List<Note> input )
     {
