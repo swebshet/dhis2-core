@@ -35,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
@@ -43,9 +44,18 @@ import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.hisp.dhis.tracker.report.ValidationErrorReporter;
+import org.hisp.dhis.tracker.validation.hooks.EnrollmentDateValidationHook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Shows how client code using the {@link AggregatingValidator} would look like.
+ *
+ * Validations here include validations we have for example in
+ * {@link EnrollmentDateValidationHook#validateMandatoryDates(ValidationErrorReporter, Enrollment)}
+ * {@link org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook}
+ */
 class AggregatingValidatorTest
 {
 
@@ -74,19 +84,11 @@ class AggregatingValidatorTest
         when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
         enrollment.setNotes( List.of( Note.builder().note( "Kj6vYde4LHh" ).value( "my duplicate note" ).build() ) );
 
-        // TODO refactor DateValidator in something simpler that is reusable;
-        // like a requireNonNull Validator
-        DateValidator dateValidator = new DateValidator();
-        // TODO think about how to create a proper error message as the
-        // validators often provide args for the error message
-        // usually they also need the UID which I want to avoid as a simple
-        // Validator should not need to know about the
-        // root its validating the field on
         DuplicateNotesValidator notesValidator = new DuplicateNotesValidator();
 
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .and( dateValidator )
-            .and( e -> e.getNotes(), notesValidator );
+            .and( Enrollment::getEnrolledAt, Objects::isNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
+            .and( Enrollment::getNotes, notesValidator );
 
         Optional<List<TrackerErrorCode>> validation = validator.apply( bundle, enrollment );
 

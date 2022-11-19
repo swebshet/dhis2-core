@@ -31,23 +31,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
+// TODO implement short circuit behavior: either in here or make this a base class/interface with default implementations for
+// and and then implement an AggregatingValidator and a FailFastValidator based on this
 public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCode>>
 {
 
     private final List<Validator<T, TrackerErrorCode>> validators = new ArrayList<>();
 
-    // TODO validators should be composable, so return type
-    // Validator<Enrollment, TrackerErrorCode>
-    // should work
-    // there should be a default implementation as the Validator interface
-    // should stay functional meaning I want people
-    // to also be able to implement one via a lambda
-    // How does that play with the idea to return Validator<Enrollment,
-    // List<TrackerErrorCode>> from here?
     public AggregatingValidator<T> and( Validator<T, TrackerErrorCode> other )
     {
         validators.add( other );
@@ -61,6 +56,21 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
         return this;
     }
 
+    public <S> AggregatingValidator<T> and( Function<T, S> value, Predicate<S> other, TrackerErrorCode error )
+    {
+        validators.add( ( bundle, input ) -> {
+
+            if ( !other.test( value.apply( input ) ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error );
+
+        } );
+        return this;
+    }
+
     @Override
     public Optional<List<TrackerErrorCode>> apply( TrackerBundle bundle, T input )
     {
@@ -69,7 +79,6 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
         {
             Optional<TrackerErrorCode> error = validator.apply( bundle, input );
             error.ifPresent( e -> errors.add( e ) );
-            // TODO implement short circuit behavior
         }
 
         if ( errors.isEmpty() )

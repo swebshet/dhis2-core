@@ -28,3 +28,12 @@ Optional<E> apply(T input);
 
 if no context is needed. I added the TrackerBundle just because I did not want to spend time on thinking about a new
 narrow interface like a ValidationContext. We definitely should before implementing any new solution.
+
+## TODO
+
+* think about returning an error with the error message args
+  validators often provide args for the error message
+  usually they also need the UID which I want to avoid as a simple
+  Validator should not need to know about the
+  root its validating the field on
+* play with a more complex validation

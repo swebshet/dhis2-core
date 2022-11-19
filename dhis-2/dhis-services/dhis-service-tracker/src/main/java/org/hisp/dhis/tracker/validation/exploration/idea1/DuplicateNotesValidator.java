@@ -36,7 +36,14 @@ import java.util.Optional;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook;
+import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 
+/**
+ * Would replace {@link EnrollmentNoteValidationHook} specifically
+ * {@link ValidationUtils.validateNotes} as it's not concerned with Enrollments
+ * itself.
+ */
 public class DuplicateNotesValidator implements Validator<List<Note>, TrackerErrorCode>
 {
 
