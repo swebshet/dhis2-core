@@ -89,10 +89,15 @@ class AggregatingValidatorTest
 
         // validation error: duplicate note
         when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
-        enrollment.setNotes( List.of( Note.builder().note( "Kj6vYde4LHh" ).value( "my duplicate note" ).build() ) );
+        enrollment.setNotes( List.of(
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) ) );
 
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
             .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
+            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
             .validate( Enrollment::getEnrolledAt, Objects::nonNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
@@ -100,7 +105,19 @@ class AggregatingValidatorTest
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.get();
-        assertContainsOnly( List.of( E1048, E1025, E1119 ), errors );
+        assertContainsOnly( List.of( E1048, E1048, E1048, E1025, E1119 ), errors );
+    }
+
+    private static Note note( String uid, String value )
+    {
+        return Note.builder().note( uid ).value( value ).build();
+    }
+
+    @Test
+    void testToMakeSureTheseUidsAreInvalid()
+    {
+        assertFalse( CodeGenerator.isValidUid( "invalid1" ) );
+        assertFalse( CodeGenerator.isValidUid( "invalid2" ) );
     }
 
 }

@@ -28,10 +28,13 @@
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
@@ -41,17 +44,46 @@ import org.hisp.dhis.tracker.report.TrackerErrorCode;
 public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCode>>
 {
 
-    private final List<Validator<T, TrackerErrorCode>> validators = new ArrayList<>();
+    // TODO: adding the validateEach complicated the rest of the code. Since I
+    // want clients to be able to run
+    // a Validator that is only able to deal with one input and return one error
+    // I need to use closures that return a List<Validator> that are applied on
+    // call to apply. So for each of the elements
+    // in a collection there will be a Validator with a closure on the element.
+    private final List<Function<T, List<Validator<T, TrackerErrorCode>>>> validators = new ArrayList<>();
 
     public AggregatingValidator<T> validate( Validator<T, TrackerErrorCode> other )
     {
-        validators.add( other );
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        validators.add( __ -> Collections.singletonList( other ) );
         return this;
     }
 
     public <S> AggregatingValidator<T> validate( Function<T, S> map, Validator<S, TrackerErrorCode> other )
     {
-        validators.add( ( bundle, input ) -> other.apply( bundle, map.apply( input ) ) );
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        validators
+            .add( __ -> Collections.singletonList( ( bundle, input ) -> other.apply( bundle, map.apply( input ) ) ) );
+        return this;
+    }
+
+    public <C, S> AggregatingValidator<T> validateEach( Function<T, Collection<C>> mapToEach, Function<C, S> map,
+        Predicate<S> other, TrackerErrorCode error )
+    {
+
+        validators.add(
+            input -> mapToEach.apply( input ).stream().map( i -> (Validator<T, TrackerErrorCode>) ( bundle, __ ) -> {
+
+                if ( other.test( map.apply( i ) ) )
+                {
+                    return Optional.empty();
+                }
+
+                return Optional.of( error );
+
+            } ).collect( Collectors.toList() ) );
         return this;
     }
 
@@ -69,7 +101,9 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
      */
     public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> other, TrackerErrorCode error )
     {
-        validators.add( ( bundle, input ) -> {
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        validators.add( __ -> Collections.singletonList( ( bundle, input ) -> {
 
             if ( other.test( map.apply( input ) ) )
             {
@@ -78,7 +112,7 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
 
             return Optional.of( error );
 
-        } );
+        } ) );
         return this;
     }
 
@@ -86,10 +120,14 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
     public Optional<List<TrackerErrorCode>> apply( TrackerBundle bundle, T input )
     {
         List<TrackerErrorCode> errors = new ArrayList<>();
-        for ( Validator<T, TrackerErrorCode> validator : validators )
+        // TODO this can likely be written in a cleaner way
+        for ( Function<T, List<Validator<T, TrackerErrorCode>>> v : validators )
         {
-            Optional<TrackerErrorCode> error = validator.apply( bundle, input );
-            error.ifPresent( e -> errors.add( e ) );
+            for ( Validator<T, TrackerErrorCode> validator : v.apply( input ) )
+            {
+                Optional<TrackerErrorCode> error = validator.apply( bundle, input );
+                error.ifPresent( errors::add );
+            }
         }
 
         if ( errors.isEmpty() )
