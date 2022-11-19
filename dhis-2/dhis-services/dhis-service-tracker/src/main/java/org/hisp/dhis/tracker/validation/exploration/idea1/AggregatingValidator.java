@@ -49,18 +49,29 @@ public class AggregatingValidator<T> implements Validator<T, List<TrackerErrorCo
         return this;
     }
 
-    // Same as above
-    public <S> AggregatingValidator<T> validate( Function<T, S> value, Validator<S, TrackerErrorCode> other )
+    public <S> AggregatingValidator<T> validate( Function<T, S> map, Validator<S, TrackerErrorCode> other )
     {
-        validators.add( ( bundle, input ) -> other.apply( bundle, value.apply( input ) ) );
+        validators.add( ( bundle, input ) -> other.apply( bundle, map.apply( input ) ) );
         return this;
     }
 
-    public <S> AggregatingValidator<T> validate( Function<T, S> value, Predicate<S> other, TrackerErrorCode error )
+    /**
+     * Validate predicate evaluates to true for input mapped by given map
+     * function from type T to type S. map is typically a method reference to a
+     * getter on type T.
+     *
+     * @param map map type T to type S for which to ensure predicate holds true
+     * @param other predicate which should hold true otherwise an error is
+     *        returned
+     * @param error
+     * @return
+     * @param <S> type on which the predicate will be evaluated
+     */
+    public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> other, TrackerErrorCode error )
     {
         validators.add( ( bundle, input ) -> {
 
-            if ( !other.test( value.apply( input ) ) )
+            if ( other.test( map.apply( input ) ) )
             {
                 return Optional.empty();
             }

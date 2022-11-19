@@ -27,7 +27,6 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
-import static java.util.function.Predicate.not;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
@@ -50,6 +49,7 @@ import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 import org.hisp.dhis.tracker.report.ValidationErrorReporter;
 import org.hisp.dhis.tracker.validation.hooks.EnrollmentDateValidationHook;
+import org.hisp.dhis.tracker.validation.hooks.PreCheckUidValidationHook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +57,7 @@ import org.junit.jupiter.api.Test;
  * Shows how client code using the {@link AggregatingValidator} would look like.
  *
  * Validations here include validations we have for example in
+ * {@link PreCheckUidValidationHook#validateEnrollment(ValidationErrorReporter, TrackerBundle, Enrollment)}
  * {@link EnrollmentDateValidationHook#validateMandatoryDates(ValidationErrorReporter, Enrollment)}
  * {@link org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook}
  */
@@ -81,6 +82,8 @@ class AggregatingValidatorTest
     void testValidationWithMultipleErrors()
     {
         Enrollment enrollment = new Enrollment();
+        // validation error: invalid UID
+        enrollment.setEnrollment( "invalidUid" );
 
         // validation error: enrolledAt date is null
 
@@ -88,22 +91,16 @@ class AggregatingValidatorTest
         when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
         enrollment.setNotes( List.of( Note.builder().note( "Kj6vYde4LHh" ).value( "my duplicate note" ).build() ) );
 
-        // TODO how to make the code easier to read in terms the methods being
-        // the negation of what i would expect.
-        // validate(not(isValdUid))
-        // should actually read
-        // validate(isValidUid)
-        // or is another name than validate better?
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, not( CodeGenerator::isValidUid ), E1048 )
-            .validate( Enrollment::getEnrolledAt, Objects::isNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, E1048 ) // PreCheckUidValidationHook
+            .validate( Enrollment::getEnrolledAt, Objects::nonNull, E1025 ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
         Optional<List<TrackerErrorCode>> validation = validator.apply( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.get();
-        assertContainsOnly( errors, List.of( E1025, E1119 ) );
+        assertContainsOnly( List.of( E1048, E1025, E1119 ), errors );
     }
 
 }
