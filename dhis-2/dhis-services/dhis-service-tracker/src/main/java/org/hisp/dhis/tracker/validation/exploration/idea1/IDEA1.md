@@ -60,11 +60,8 @@ back for every error does not mean our code needs pass on the burden to every va
 
 ## TODO
 
-* think about returning an error with the error message args
-  validators often provide args for the error message
-  usually they also need the UID which I want to avoid as a simple
-  Validator should not need to know about the
-  root its validating the field on
+* how to improve the creation of Error? Its hard to read right now, especially if I have to cast to BiFunction
+
 * Allow passing an AggregatingValidator into an AggregatingValidator. This would allow grouping of Validations. Imagine
 * Extract an EnrollmentValidator from the AggregatingValidatorTest, maybe showing the grouping via UID Validators
   we want to create different validations for create/update but some Validators should always be applied.
@@ -117,3 +114,20 @@ context. Right now that is the TrackerBundle. We should work on creating a small
 Having the current time in the context makes testing easy and validation behave consistently for the user. Imagine
 multiple validations comparing a date to `LocalDate.now()` called in each validation. The error message will contain
 different timestamps for now.
+
+* We have too many error codes. Some of them can be more generic and reusable like
+
+  E1121( "Missing required tracked entity property: `{0}`." ),
+  E1122( "Missing required enrollment property: `{0}`." ),
+  E1123( "Missing required event property: `{0}`." ),
+  E1124( "Missing required relationship property: `{0}`." ),
+
+one code would be enough
+
+E1121( "Missing required property `{0}`." )
+
+if needed we can write
+
+E1121( "Missing required property `{0}` on `{1}`." )
+
+might not be necessary as our error report contains the "trackerType" field.

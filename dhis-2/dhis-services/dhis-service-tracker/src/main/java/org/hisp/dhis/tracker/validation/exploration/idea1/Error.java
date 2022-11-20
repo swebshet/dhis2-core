@@ -27,6 +27,8 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
+import java.util.function.BiFunction;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -47,5 +49,17 @@ public class Error
     {
         String message = MessageFormatter.format( idSchemes, code.getMessage(), arguments );
         return new Error( code, message );
+    }
+
+    static <T> BiFunction<TrackerIdSchemeParams, T, Error> error( TrackerErrorCode code )
+    {
+        return ( idSchemes, argument ) -> error( idSchemes, code, argument );
+    }
+
+    static <T> BiFunction<TrackerIdSchemeParams, T, Error> error( TrackerErrorCode code, Object... arguments )
+    {
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        return ( idSchemes, __ ) -> error( idSchemes, code, arguments );
     }
 }

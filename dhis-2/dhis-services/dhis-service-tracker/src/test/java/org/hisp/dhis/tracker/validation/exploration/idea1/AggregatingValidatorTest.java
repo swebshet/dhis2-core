@@ -27,7 +27,6 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
@@ -39,9 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.hisp.dhis.common.CodeGenerator;
@@ -59,8 +56,6 @@ import org.hisp.dhis.tracker.validation.hooks.PreCheckMandatoryFieldsValidationH
 import org.hisp.dhis.tracker.validation.hooks.PreCheckUidValidationHook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import io.micrometer.common.util.StringUtils;
 
 /**
  * Shows how client code using the {@link AggregatingValidator} would look like.
@@ -125,9 +120,7 @@ class AggregatingValidatorTest
         enrollment.setOrgUnit( MetadataIdentifier.EMPTY_UID );
 
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( e -> !e.getOrgUnit().isBlank(),
-                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
-                    "orgUnit" ) ); // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getOrgUnit().isBlank(), error( E1122, "orgUnit" ) ); // PreCheckMandatoryFieldsValidationHook
 
         Optional<List<Error>> validation = validator.apply( bundle, enrollment );
 
@@ -145,62 +138,13 @@ class AggregatingValidatorTest
         enrollment.setEnrollment( "invalid" );
 
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid,
-                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ); // PreCheckUidValidationHook
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
 
         Optional<List<Error>> validation = validator.apply( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
         assertContainsOnly( List.of( E1048 ), errors );
-    }
-
-    // TODO make sure I have a test per case
-
-    @Test
-    void testValidationWithMultipleErrors()
-    {
-        Enrollment enrollment = new Enrollment();
-        enrollment.setOrgUnit( MetadataIdentifier.ofUid( "Nav6inZRw1u" ) );
-        // validation error: program not set
-        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
-        enrollment.setTrackedEntity( "PuBvJxDB73z" );
-
-        // validation error: invalid UID
-        enrollment.setEnrollment( "invalid" );
-
-        // validation error: enrolledAt date is null
-
-        // validation error: duplicate note Kj6vYde4LHh
-        when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
-        enrollment.setNotes( List.of(
-            note( "Kj6vYde4LHh", "my duplicate note" ),
-            note( "olfXZzSGacW", "valid note" ),
-            note( "invalid1", "note 1 with invalid uid" ),
-            note( "invalid2", "note 2 with invalid uid" ) ) );
-
-        AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid,
-                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
-            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid,
-                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
-            .validate( e -> !e.getOrgUnit().isBlank(),
-                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
-                    "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(),
-                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
-                    "program" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
-                ( idSchemes, __ ) -> new Error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getEnrolledAt, Objects::nonNull,
-                ( idSchemes, __ ) -> error( idSchemes, E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
-            .validate( Enrollment::getNotes, noDuplicateNotes() );
-
-        Optional<List<Error>> validation = validator.apply( bundle, enrollment );
-
-        assertFalse( validation.isEmpty() );
-        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
-        assertContainsOnly( List.of( E1048, E1048, E1048, E1122, E1025, E1119 ), errors );
     }
 
     private static Note note( String uid, String value )

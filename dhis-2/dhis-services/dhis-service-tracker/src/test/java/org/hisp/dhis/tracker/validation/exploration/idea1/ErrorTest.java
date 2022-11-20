@@ -27,38 +27,32 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea1;
 
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
-import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
-import static org.hisp.dhis.tracker.validation.exploration.idea1.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.tracker.validation.exploration.idea1.Error.error;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Objects;
-import java.util.function.Predicate;
+import java.util.function.BiFunction;
 
-import org.apache.commons.lang3.StringUtils;
-import org.hisp.dhis.common.CodeGenerator;
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.domain.Enrollment;
-import org.hisp.dhis.tracker.domain.Note;
+import org.junit.jupiter.api.Test;
 
-/**
- * Example class of how we would build our Validators specific to our domain
- * types like {@link Enrollment}. Such higher level Validators can be built
- * using existing {@link Predicate}s or lambdas. More complex Validators like
- * PreCheckSecurityOwnershipValidationHook can live in separate classes.
- */
-public class EnrollmentValidator
+class ErrorTest
 {
 
-    public static AggregatingValidator<Enrollment> enrollmentValidator()
+    @Test
+    void testErrorGivenASingleArgErrorCode()
     {
-        return new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ) // PreCheckUidValidationHook
-            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, error( E1048 ) ) // PreCheckUidValidationHook
-            .validate( e -> !e.getOrgUnit().isBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(), error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
-            .validate( Enrollment::getNotes, noDuplicateNotes() );
+
+        TrackerIdSchemeParams idSchemes = TrackerIdSchemeParams.builder()
+            .build();
+
+        BiFunction<TrackerIdSchemeParams, Enrollment, Error> errFunc = error( E1122, "orgUnit" );
+
+        Error err = errFunc.apply( idSchemes, new Enrollment() );
+
+        assertEquals( E1122, err.getCode() );
+        assertEquals( "Missing required enrollment property: `orgUnit`.", err.getMessage() );
     }
+
 }
