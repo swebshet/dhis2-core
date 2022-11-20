@@ -32,6 +32,7 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea1.DuplicateNotesValidator.noDuplicateNotes;
+import static org.hisp.dhis.tracker.validation.exploration.idea1.Error.error;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.Mockito.mock;
@@ -44,6 +45,7 @@ import java.util.stream.Collectors;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
@@ -75,11 +77,18 @@ class AggregatingValidatorTest
 
     private TrackerBundle bundle;
 
+    private TrackerIdSchemeParams idSchemes;
+
     @BeforeEach
     void setUp()
     {
 
+        idSchemes = TrackerIdSchemeParams.builder()
+            .build();
+
         preheat = mock( TrackerPreheat.class );
+        when( preheat.getIdSchemes() ).thenReturn( idSchemes );
+
         bundle = TrackerBundle.builder()
             .preheat( preheat )
             .build();
@@ -107,20 +116,15 @@ class AggregatingValidatorTest
             note( "invalid1", "note 1 with invalid uid" ),
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
-        // TODO extract helper? missingField() for E1122
-        // or some factory so it reads nicer
-        // TODO E1048 is weird. Should it not be property or field "enrollment"
-        // has an invalid UID `yyy`, whats Object in this error message?
-
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, uid -> new Error( E1048, uid ) ) // PreCheckUidValidationHook
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, uid -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
             .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid,
                 uid -> new Error( E1048, uid ) ) // PreCheckUidValidationHook
-            .validate( e -> !e.getOrgUnit().isBlank(), __ -> new Error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(), __ -> new Error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getOrgUnit().isBlank(), __ -> error( idSchemes, E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getProgram().isBlank(), __ -> error( idSchemes, E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
                 __ -> new Error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getEnrolledAt, Objects::nonNull, date -> new Error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
+            .validate( Enrollment::getEnrolledAt, Objects::nonNull, date -> error( idSchemes, E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
         Optional<List<Error>> validation = validator.apply( bundle, enrollment );

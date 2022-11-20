@@ -53,7 +53,7 @@ import org.hisp.dhis.util.ObjectUtils;
 /**
  * @author Luciano Fiandesio
  */
-class MessageFormatter
+public class MessageFormatter
 {
 
     private MessageFormatter()
@@ -75,7 +75,7 @@ class MessageFormatter
      *        pattern
      * @return interpolated string of given message pattern and arguments
      */
-    protected static String format( TrackerIdSchemeParams idSchemes, String messagePattern, Object... arguments )
+    public static String format( TrackerIdSchemeParams idSchemes, String messagePattern, Object... arguments )
     {
         List<String> args = formatArguments( idSchemes, arguments );
         return MessageFormat.format( messagePattern, args.toArray( new Object[0] ) );

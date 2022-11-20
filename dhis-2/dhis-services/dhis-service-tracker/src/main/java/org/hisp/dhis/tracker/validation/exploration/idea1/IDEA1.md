@@ -49,9 +49,7 @@ Only because users get a structure like
 }
 ```
 
-back for every error does not mean our code needs pass on the burden to every validation. The information
-of `trackerType` and `uid` is redundant by the way as its embedded in the object report which already has that
-information.
+back for every error does not mean our code needs pass on the burden to every validation.
 
 ## Assumptions
 
@@ -75,3 +73,34 @@ information.
 * how to return one warning or one error? the orchestration needs to be able to distinguish between the two, so it can
   decide if we should stop the validation, not import a given entity. How many warnings do we even have? I would argue that
   the duplicate notes case should actually be an error, or not?
+
+## Follow Up
+
+* EnrollmentNoteValidationHook and ValidationUtils#validateNotes
+  * We mutate notes in the validation hook!
+  * We issue a warning for a duplicate note and discard it? Why is this not an error?
+* E1048( "Object: `{0}`, uid: `{1}`, has an invalid uid format." ). We print
+
+```json
+    "errorReports": [
+      {
+        "message": "Object: `invalid`, uid: `invalid`, has an invalid uid format.",
+        "errorCode": "E1048",
+        "trackerType": "ENROLLMENT",
+        "uid": "invalid"
+      }
+    ],
+```
+
+I suggest we change it to 
+
+```json
+    "errorReports": [
+      {
+        "message": "Property `enrollment` contains an invalid UID `invalid`. Valid format is ...",
+        "errorCode": "E1048",
+        "trackerType": "ENROLLMENT",
+        "uid": "invalid"
+      }
+    ],
+```

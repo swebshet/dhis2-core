@@ -30,6 +30,8 @@ package org.hisp.dhis.tracker.validation.exploration.idea1;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.report.MessageFormatter;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 
 @Getter
@@ -40,4 +42,10 @@ public class Error
     private final TrackerErrorCode code;
 
     private final String message;
+
+    static Error error( TrackerIdSchemeParams idSchemes, TrackerErrorCode code, Object... arguments )
+    {
+        String message = MessageFormatter.format( idSchemes, code.getMessage(), arguments );
+        return new Error( code, message );
+    }
 }
