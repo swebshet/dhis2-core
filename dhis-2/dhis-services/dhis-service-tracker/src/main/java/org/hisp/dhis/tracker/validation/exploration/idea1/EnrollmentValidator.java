@@ -42,19 +42,28 @@ import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.Note;
 
 /**
- * Example class of how we would build our Validators specific to our domain
- * types like {@link Enrollment}. Such higher level Validators can be built
- * using existing {@link Predicate}s or lambdas. More complex Validators like
- * PreCheckSecurityOwnershipValidationHook can live in separate classes.
+ * Example class of how we would build our {@link Validator}s specific to our
+ * domain types like {@link Enrollment}. Such higher level Validators can be
+ * built using existing {@link Predicate}s or lambdas. More complex Validators
+ * like PreCheckSecurityOwnershipValidationHook can live in separate classes.
+ *
+ * Validators can also be "grouped" which can be useful in creating reusable
+ * groups in case we want to always run certain Validators no matter if it's a
+ * create or update while others should only run on create.
  */
 public class EnrollmentValidator
 {
+    public static AggregatingValidator<Enrollment> uidProperties()
+    {
+        return new AggregatingValidator<Enrollment>()
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ) // PreCheckUidValidationHook
+            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
+    }
 
     public static AggregatingValidator<Enrollment> enrollmentValidator()
     {
         return new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ) // PreCheckUidValidationHook
-            .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid, error( E1048 ) ) // PreCheckUidValidationHook
+            .validate( uidProperties() )
             .validate( e -> !e.getOrgUnit().isBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( e -> !e.getProgram().isBlank(), error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook

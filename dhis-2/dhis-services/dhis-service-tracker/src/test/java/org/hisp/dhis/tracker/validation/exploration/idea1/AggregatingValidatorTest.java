@@ -30,6 +30,7 @@ package org.hisp.dhis.tracker.validation.exploration.idea1;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1123;
 import static org.hisp.dhis.tracker.validation.exploration.idea1.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.tracker.validation.exploration.idea1.Error.error;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
@@ -145,6 +146,24 @@ class AggregatingValidatorTest
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
         assertContainsOnly( List.of( E1048 ), errors );
+    }
+
+    @Test
+    void testAddingValidatorsFromAnotherAggregateValidator()
+    {
+        Enrollment enrollment = new Enrollment();
+
+        AggregatingValidator<Enrollment> validator1 = new AggregatingValidator<Enrollment>()
+            .validate( __ -> false, error( E1122 ) );
+        AggregatingValidator<Enrollment> validator2 = new AggregatingValidator<Enrollment>()
+            .validate( __ -> false, error( E1123 ) )
+            .validate( validator1 );
+
+        Optional<List<Error>> validation = validator2.apply( bundle, enrollment );
+
+        assertFalse( validation.isEmpty() );
+        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
+        assertContainsOnly( List.of( E1122, E1123 ), errors );
     }
 
     private static Note note( String uid, String value )

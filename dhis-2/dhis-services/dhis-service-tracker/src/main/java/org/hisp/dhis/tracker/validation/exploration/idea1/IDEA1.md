@@ -60,9 +60,6 @@ back for every error does not mean our code needs pass on the burden to every va
 
 ## TODO
 
-* Allow passing an AggregatingValidator into an AggregatingValidator. This would allow grouping of Validations. Imagine
-* Extract a group of Validators in a UID Validator in EnrollmentValidator
-  we want to create different validations for create/update but some Validators should always be applied.
 * Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
 * how to return one warning or one error? the orchestration needs to be able to distinguish between the two, so it can

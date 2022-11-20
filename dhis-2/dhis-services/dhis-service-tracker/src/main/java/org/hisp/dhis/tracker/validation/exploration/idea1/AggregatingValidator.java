@@ -53,6 +53,17 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
     // in a collection there will be a Validator with a closure on the element.
     private final List<Function<T, List<Validator<T, Error>>>> validators = new ArrayList<>();
 
+    public List<Function<T, List<Validator<T, Error>>>> getValidators()
+    {
+        return Collections.unmodifiableList( validators );
+    }
+
+    public AggregatingValidator<T> validate( AggregatingValidator<T> validator )
+    {
+        validators.addAll( validator.getValidators() );
+        return this;
+    }
+
     public AggregatingValidator<T> validate( Validator<T, Error> validator )
     {
         // ignoring the input parameter using __ as _ is reserved and might
