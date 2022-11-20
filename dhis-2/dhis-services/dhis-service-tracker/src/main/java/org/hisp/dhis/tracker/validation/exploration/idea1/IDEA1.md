@@ -60,10 +60,8 @@ back for every error does not mean our code needs pass on the burden to every va
 
 ## TODO
 
-* how to improve the creation of Error? Its hard to read right now, especially if I have to cast to BiFunction
-
 * Allow passing an AggregatingValidator into an AggregatingValidator. This would allow grouping of Validations. Imagine
-* Extract an EnrollmentValidator from the AggregatingValidatorTest, maybe showing the grouping via UID Validators
+* Extract a group of Validators in a UID Validator in EnrollmentValidator
   we want to create different validations for create/update but some Validators should always be applied.
 * Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
