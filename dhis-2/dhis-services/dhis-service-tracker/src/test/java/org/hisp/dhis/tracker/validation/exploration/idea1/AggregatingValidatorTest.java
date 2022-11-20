@@ -96,6 +96,68 @@ class AggregatingValidatorTest
     }
 
     @Test
+    void testValidationWithValidatorThatNeedsMapping()
+    {
+        Enrollment enrollment = new Enrollment();
+
+        // validation error: duplicate note Kj6vYde4LHh
+        when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
+        enrollment.setNotes( List.of(
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) ) );
+
+        AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
+            .validate( Enrollment::getNotes, noDuplicateNotes() );
+
+        Optional<List<Error>> validation = validator.apply( bundle, enrollment );
+
+        assertFalse( validation.isEmpty() );
+        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
+        assertContainsOnly( List.of( E1119 ), errors );
+    }
+
+    @Test
+    void testValidationWithPredicate()
+    {
+        Enrollment enrollment = new Enrollment();
+        enrollment.setOrgUnit( MetadataIdentifier.EMPTY_UID );
+
+        AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
+            .validate( e -> !e.getOrgUnit().isBlank(),
+                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
+                    "orgUnit" ) ); // PreCheckMandatoryFieldsValidationHook
+
+        Optional<List<Error>> validation = validator.apply( bundle, enrollment );
+
+        assertFalse( validation.isEmpty() );
+        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
+        assertContainsOnly( List.of( E1122 ), errors );
+    }
+
+    @Test
+    void testValidationWithPredicateThatNeedsMapping()
+    {
+        Enrollment enrollment = new Enrollment();
+
+        // validation error: invalid UID
+        enrollment.setEnrollment( "invalid" );
+
+        AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid,
+                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ); // PreCheckUidValidationHook
+
+        Optional<List<Error>> validation = validator.apply( bundle, enrollment );
+
+        assertFalse( validation.isEmpty() );
+        List<TrackerErrorCode> errors = validation.get().stream().map( Error::getCode ).collect( Collectors.toList() );
+        assertContainsOnly( List.of( E1048 ), errors );
+    }
+
+    // TODO make sure I have a test per case
+
+    @Test
     void testValidationWithMultipleErrors()
     {
         Enrollment enrollment = new Enrollment();
