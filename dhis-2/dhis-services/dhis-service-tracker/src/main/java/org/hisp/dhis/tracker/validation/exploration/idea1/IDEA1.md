@@ -79,7 +79,12 @@ back for every error does not mean our code needs pass on the burden to every va
 * EnrollmentNoteValidationHook and ValidationUtils#validateNotes
   * We mutate notes in the validation hook!
   * We issue a warning for a duplicate note and discard it? Why is this not an error?
-* E1048( "Object: `{0}`, uid: `{1}`, has an invalid uid format." ). We print
+
+* [E1048](https://github.com/dhis2/dhis2-core/blob/258ebcb66e2acf3caa224e779f23e82e68093ca4/dhis-2/dhis-services/dhis-service-tracker/src/main/java/org/hisp/dhis/tracker/report/TrackerErrorCode.java#L71)
+
+"Object: `{0}`, uid: `{1}`, has an invalid uid format."
+
+We print
 
 ```json
     "errorReports": [
@@ -104,3 +109,11 @@ I suggest we change it to
       }
     ],
 ```
+* [EnrollmentDateValidationHook](https://github.com/dhis2/dhis2-core/blob/258ebcb66e2acf3caa224e779f23e82e68093ca4/dhis-2/dhis-services/dhis-service-tracker/src/main/java/org/hisp/dhis/tracker/validation/hooks/EnrollmentDateValidationHook.java#L87-L90)
+
+We call `LocalDate.now()` in our validation hook. Validations should be pure functions IMHO. No mutations (apart from
+adding an error for now), so time should also not have an effect. The "current" time should be part of the validation
+context. Right now that is the TrackerBundle. We should work on creating a small, read-only ValidationContext.
+Having the current time in the context makes testing easy and validation behave consistently for the user. Imagine
+multiple validations comparing a date to `LocalDate.now()` called in each validation. The error message will contain
+different timestamps for now.
