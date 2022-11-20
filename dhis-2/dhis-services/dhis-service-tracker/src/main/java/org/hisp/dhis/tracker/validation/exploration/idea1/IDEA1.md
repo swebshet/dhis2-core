@@ -68,7 +68,10 @@ information.
   Validator should not need to know about the
   root its validating the field on
 * Allow passing an AggregatingValidator into an AggregatingValidator. This would allow grouping of Validations. Imagine
+* Extract an EnrollmentValidator from the AggregatingValidatorTest, maybe showing the grouping via UID Validators
   we want to create different validations for create/update but some Validators should always be applied.
+* Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
 * how to return one warning or one error? the orchestration needs to be able to distinguish between the two, so it can
-  decide if we should stop the validation, not import a given entity
+  decide if we should stop the validation, not import a given entity. How many warnings do we even have? I would argue that
+  the duplicate notes case should actually be an error, or not?
