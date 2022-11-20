@@ -41,6 +41,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.hisp.dhis.common.CodeGenerator;
@@ -117,14 +118,20 @@ class AggregatingValidatorTest
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
         AggregatingValidator<Enrollment> validator = new AggregatingValidator<Enrollment>()
-            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid, uid -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
+            .validate( Enrollment::getEnrollment, CodeGenerator::isValidUid,
+                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
             .validateEach( Enrollment::getNotes, Note::getNote, CodeGenerator::isValidUid,
-                uid -> new Error( E1048, uid ) ) // PreCheckUidValidationHook
-            .validate( e -> !e.getOrgUnit().isBlank(), __ -> error( idSchemes, E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(), __ -> error( idSchemes, E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
+                ( idSchemes, uid ) -> error( idSchemes, E1048, uid ) ) // PreCheckUidValidationHook
+            .validate( e -> !e.getOrgUnit().isBlank(),
+                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
+                    "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> !e.getProgram().isBlank(),
+                (BiFunction<TrackerIdSchemeParams, Enrollment, Error>) ( idSchemes, __ ) -> error( idSchemes, E1122,
+                    "program" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
-                __ -> new Error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( Enrollment::getEnrolledAt, Objects::nonNull, date -> error( idSchemes, E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
+                ( idSchemes, __ ) -> new Error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( Enrollment::getEnrolledAt, Objects::nonNull,
+                ( idSchemes, __ ) -> error( idSchemes, E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
 
         Optional<List<Error>> validation = validator.apply( bundle, enrollment );

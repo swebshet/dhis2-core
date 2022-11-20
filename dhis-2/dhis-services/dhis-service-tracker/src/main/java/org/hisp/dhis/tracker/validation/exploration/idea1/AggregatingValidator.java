@@ -32,10 +32,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
 // TODO implement short circuit behavior: either in here or make this a base class/interface with default implementations for
@@ -70,7 +72,7 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
     }
 
     public <C, S> AggregatingValidator<T> validateEach( Function<T, Collection<C>> mapToEach, Function<C, S> map,
-        Predicate<S> validator, Function<S, Error> error )
+        Predicate<S> validator, BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
 
         validators.add(
@@ -82,7 +84,7 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
                     return Optional.empty();
                 }
 
-                return Optional.of( error.apply( mappedInput ) );
+                return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
 
             } ).collect( Collectors.toList() ) );
 
@@ -101,7 +103,8 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
      * @return
      * @param <S> type on which the predicate will be evaluated
      */
-    public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> validator, Function<S, Error> error )
+    public <S> AggregatingValidator<T> validate( Function<T, S> map, Predicate<S> validator,
+        BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
@@ -113,13 +116,13 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
                 return Optional.empty();
             }
 
-            return Optional.of( error.apply( mappedInput ) );
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
 
         } ) );
         return this;
     }
 
-    public AggregatingValidator<T> validate( Predicate<T> validator, Function<T, Error> error )
+    public AggregatingValidator<T> validate( Predicate<T> validator, BiFunction<TrackerIdSchemeParams, T, Error> error )
     {
         // ignoring the input parameter using __ as _ is reserved and might
         // become the throwaway parameter
@@ -130,7 +133,7 @@ public class AggregatingValidator<T> implements Validator<T, List<Error>>
                 return Optional.empty();
             }
 
-            return Optional.of( error.apply( input ) );
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
 
         } ) );
         return this;
