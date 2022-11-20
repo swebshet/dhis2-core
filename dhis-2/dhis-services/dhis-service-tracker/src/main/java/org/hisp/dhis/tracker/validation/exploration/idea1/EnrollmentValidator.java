@@ -64,10 +64,11 @@ public class EnrollmentValidator
     {
         return new AggregatingValidator<Enrollment>()
             .validate( uidProperties() )
-            .validate( e -> !e.getOrgUnit().isBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .validate( e -> !e.getProgram().isBlank(), error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
+            .validate( e -> e.getProgram(), CommonValidations::notBlank, error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
             .validate( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .validate( Enrollment::getNotes, noDuplicateNotes() );
     }
+
 }
