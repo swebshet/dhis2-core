@@ -25,24 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.tree;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import java.util.Optional;
 
-/**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
- */
-class CommonValidations
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
+
+@FunctionalInterface
+public interface Validator<T>
 {
 
-    public static boolean notBlank( MetadataIdentifier id )
-    {
-        if ( id == null )
-        {
-            return false;
-        }
-
-        return id.isNotBlank();
-    }
+    // TODO TrackerBundle can be interpreted as a kind of ValidationContext.
+    // Ideally we provide an interface that is
+    // read-only and much narrower than the bundle or even the preheat. The
+    // bundle contains the entire payload so this can dilute the narrow
+    // interface defined here again.
+    Optional<Error> apply( TrackerBundle bundle, T input );
 }

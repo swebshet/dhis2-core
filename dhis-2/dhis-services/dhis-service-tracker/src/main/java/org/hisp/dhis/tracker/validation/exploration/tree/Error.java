@@ -25,24 +25,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.tree;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import java.util.function.BiFunction;
 
-/**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
- */
-class CommonValidations
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.report.MessageFormatter;
+import org.hisp.dhis.tracker.report.TrackerErrorCode;
+
+@Getter
+@RequiredArgsConstructor
+public class Error
 {
 
-    public static boolean notBlank( MetadataIdentifier id )
-    {
-        if ( id == null )
-        {
-            return false;
-        }
+    private final TrackerErrorCode code;
 
-        return id.isNotBlank();
+    private final String message;
+
+    static Error error( TrackerIdSchemeParams idSchemes, TrackerErrorCode code, Object... arguments )
+    {
+        String message = MessageFormatter.format( idSchemes, code.getMessage(), arguments );
+        return new Error( code, message );
+    }
+
+    static <T> BiFunction<TrackerIdSchemeParams, T, Error> error( TrackerErrorCode code )
+    {
+        return ( idSchemes, argument ) -> error( idSchemes, code, argument );
+    }
+
+    static <T> BiFunction<TrackerIdSchemeParams, T, Error> error( TrackerErrorCode code, Object... arguments )
+    {
+        // ignoring the input parameter using __ as _ is reserved and might
+        // become the throwaway parameter
+        return ( idSchemes, __ ) -> error( idSchemes, code, arguments );
     }
 }

@@ -25,24 +25,34 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.idea2;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
+import static org.hisp.dhis.tracker.validation.exploration.idea2.Error.error;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
- */
-class CommonValidations
+import java.util.function.BiFunction;
+
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.domain.Enrollment;
+import org.junit.jupiter.api.Test;
+
+class ErrorTest
 {
 
-    public static boolean notBlank( MetadataIdentifier id )
+    @Test
+    void testErrorGivenASingleArgErrorCode()
     {
-        if ( id == null )
-        {
-            return false;
-        }
 
-        return id.isNotBlank();
+        TrackerIdSchemeParams idSchemes = TrackerIdSchemeParams.builder()
+            .build();
+
+        BiFunction<TrackerIdSchemeParams, Enrollment, Error> errFunc = error( E1122, "orgUnit" );
+
+        Error err = errFunc.apply( idSchemes, new Enrollment() );
+
+        assertEquals( E1122, err.getCode() );
+        assertEquals( "Missing required enrollment property: `orgUnit`.", err.getMessage() );
     }
+
 }

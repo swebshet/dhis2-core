@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import static org.apache.commons.lang3.StringUtils.isNotEmpty;
 
@@ -45,7 +45,7 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
  * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
  * itself.
  */
-class DuplicateNotesValidator implements Validator<List<Note>, Error>
+public class DuplicateNotesValidator implements Validator<List<Note>, Error>
 {
 
     public static Validator<List<Note>, Error> noDuplicateNotes()

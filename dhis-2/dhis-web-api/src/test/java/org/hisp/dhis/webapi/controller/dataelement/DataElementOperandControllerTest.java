@@ -145,7 +145,7 @@ class DataElementOperandControllerTest
             fieldFilterService, linkService,
             contextService, schemaService, dataElementCategoryService );
 
-        // Set custom Node Message converter //
+        // Set custom ValidationNode Message converter //
         NodeService nodeService = new DefaultNodeService();
         Jackson2JsonNodeSerializer serializer = new Jackson2JsonNodeSerializer( staticJsonMapper() );
         ReflectionTestUtils.setField( nodeService, "nodeSerializers", Lists.newArrayList( serializer ) );

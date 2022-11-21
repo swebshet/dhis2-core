@@ -25,15 +25,15 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 
 /**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
+ * Its easy to create common {@link Validator}s or predicates that we can reuse
  * across our different entities.
  */
-class CommonValidations
+public class CommonValidations
 {
 
     public static boolean notBlank( MetadataIdentifier id )

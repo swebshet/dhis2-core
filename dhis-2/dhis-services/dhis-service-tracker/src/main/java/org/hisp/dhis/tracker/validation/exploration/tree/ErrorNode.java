@@ -25,24 +25,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea1;
+package org.hisp.dhis.tracker.validation.exploration.tree;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
-/**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
- */
-class CommonValidations
+public class ErrorNode implements Node<Optional<Error>>
 {
 
-    public static boolean notBlank( MetadataIdentifier id )
-    {
-        if ( id == null )
-        {
-            return false;
-        }
+    private final Optional<Error> err;
 
-        return id.isNotBlank();
+    private final List<ErrorNode> children;
+
+    public ErrorNode()
+    {
+        this.err = Optional.empty();
+        this.children = new ArrayList<>();
+    }
+
+    public ErrorNode( Optional<Error> error )
+    {
+        this.err = error;
+        this.children = new ArrayList<>();
+    }
+
+    public ErrorNode add( ErrorNode child )
+    {
+        children.add( child );
+        return this;
+    }
+
+    @Override
+    public Optional<Error> get()
+    {
+        return err;
     }
 }
