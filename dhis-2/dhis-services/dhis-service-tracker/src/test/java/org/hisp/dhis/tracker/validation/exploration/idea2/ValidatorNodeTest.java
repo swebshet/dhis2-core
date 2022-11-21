@@ -35,6 +35,8 @@ import static org.hisp.dhis.tracker.validation.exploration.idea2.ValidatorNode.v
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,12 +44,37 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import org.hisp.dhis.common.CodeGenerator;
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class ValidatorNodeTest
 {
+
+    private TrackerPreheat preheat;
+
+    private TrackerBundle bundle;
+
+    private TrackerIdSchemeParams idSchemes;
+
+    @BeforeEach
+    void setUp()
+    {
+
+        idSchemes = TrackerIdSchemeParams.builder()
+            .build();
+
+        preheat = mock( TrackerPreheat.class );
+        when( preheat.getIdSchemes() ).thenReturn( idSchemes );
+
+        bundle = TrackerBundle.builder()
+            .preheat( preheat )
+            .build();
+    }
 
     @Test
     void testFunctions()
@@ -59,7 +86,7 @@ class ValidatorNodeTest
         // Optional<Error>
         // Enrollment::getEnrollment -> CodeGenerator::isValidUid
 
-        // lets first do the work on the client of providing a Function<T,
+        // let's first do the work on the client of providing a Function<T,
         // Optional<Error>
         // later I can add nice helpers that allow passing individual functions
         // so client code is more similar to IDEA1
@@ -72,7 +99,7 @@ class ValidatorNodeTest
 
         // Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 )
         Function<Boolean, Optional<Error>> predicateToError = b -> {
-            if ( b != true )
+            if ( !b )
             {
                 return Optional.of( error( E1048 ) );
             }
@@ -103,13 +130,8 @@ class ValidatorNodeTest
             .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
-        // ValidatorNode<Optional<Error>> result = root.map(new Enrollment());
-        // TODO is it map or actually apply? I mean every node is a function
-        // which maps
-        Node<Optional<Error>> result = root.map( new Enrollment() );
-
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.visit( new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        root.visit( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
 
         assertContainsOnly( List.of( E1048, E1000 ), errs );
     }
@@ -120,16 +142,17 @@ class ValidatorNodeTest
 
         ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
             .andThen(
-                validate( (Function<Enrollment, Optional<Error>>) e -> Optional.of( error( E1048 ) ) )
-                    .andThen( validate( e -> Optional.of( error( E9999 ) ) ) ) )
+                validate( (SimpleValidator<Enrollment>) e1 -> Optional.of( error( E1048 ) ) )
+                    .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         // TODO is it map or actually apply? I mean every node is a function
         // which maps
-        Node<Optional<Error>> result = root.map( new Enrollment() );
+        // and what can one do with this :thinking:
+        Node<Optional<Error>> result = root.apply( bundle, new Enrollment() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.visit( new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        root.visit( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
 
         assertContainsOnly( List.of( E1048, E1080 ), errs );
     }

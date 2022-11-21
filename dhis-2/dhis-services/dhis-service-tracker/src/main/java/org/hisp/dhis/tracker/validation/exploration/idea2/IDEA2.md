@@ -62,6 +62,7 @@ back for every error does not mean our code needs pass on the burden to every va
   you pass it a function and it maps from one category to another
   there is also such a similarity between a node and a function in terms of andThen, ... maybe its just because a node
   is a wrapper of a function
+* how can I generalize collecting the errors in a list? like Java Collections .collector(toList) style?
 * Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
 * how can I generalize what I have more? would that even help?
