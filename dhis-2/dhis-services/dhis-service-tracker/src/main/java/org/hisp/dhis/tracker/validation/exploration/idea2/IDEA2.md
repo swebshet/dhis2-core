@@ -55,8 +55,16 @@ back for every error does not mean our code needs pass on the burden to every va
 
 ## TODO
 
+* make it more readable and comparable in its use to idea1
+* how can I implement the validateEach I had in idea1 for validating collections using simple validators?
+  it would be cool if a ValidatorNode could create multiple Node<Optional<Error>> when applied/mapped/visited
+* think about naming? feels a bit like a ValidatorNode is a functor and ... the visit method could actually be the map
+  you pass it a function and it maps from one category to another
+  there is also such a similarity between a node and a function in terms of andThen, ... maybe its just because a node
+  is a wrapper of a function
 * Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
+* how can I generalize what I have more? would that even help?
 * how to return one warning or one error? the orchestration needs to be able to distinguish between the two, so it can
   decide if we should stop the validation, not import a given entity. How many warnings do we even have? I would argue that
   the duplicate notes case should actually be an error, or not?

@@ -27,6 +27,7 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea2;
 
+// TODO is this even useful?
 public interface Node<T>
 {
 

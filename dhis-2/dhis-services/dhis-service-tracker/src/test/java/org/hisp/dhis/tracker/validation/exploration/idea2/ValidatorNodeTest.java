@@ -99,9 +99,6 @@ class ValidatorNodeTest
     void testIndependentValidators()
     {
 
-        // TODO 1: 2 independent validators
-        // how do I apply the validation an go from ValidatorNode<Enrollment>
-        // to ValidatorNode<Optional<Error>> ?
         ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
             .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
