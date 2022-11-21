@@ -28,6 +28,7 @@
 package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.EnrollmentValidator.enrollmentValidator;
@@ -102,8 +103,7 @@ class EnrollmentValidatorTest
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );
-        assertContainsOnly( List.of( E1122, E1025, E1119 ), errors );
-        // assertContainsOnly( List.of( E1119, E1122), errors );
+        assertContainsOnly( List.of( E1048, E1122, E1025, E1119 ), errors );
     }
 
     private static Note note( String uid, String value )

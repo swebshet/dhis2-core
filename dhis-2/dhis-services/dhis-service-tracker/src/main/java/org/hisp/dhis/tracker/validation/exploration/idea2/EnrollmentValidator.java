@@ -28,6 +28,7 @@
 package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.Error.error;
@@ -36,6 +37,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
 
 /**
@@ -50,9 +52,19 @@ import org.hisp.dhis.tracker.domain.Enrollment;
  */
 public class EnrollmentValidator
 {
+    public static ValidatorNode<Enrollment> uidProperties()
+    {
+        return new ValidatorNode<Enrollment>()
+            .andThen( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
+        // .validateEach( Enrollment::getNotes, Note::getNote,
+        // CodeGenerator::isValidUid, error( E1048 ) ); //
+        // PreCheckUidValidationHook
+    }
+
     public static ValidatorNode<Enrollment> enrollmentValidator()
     {
         return new ValidatorNode<Enrollment>()
+            .andThen( uidProperties() )
             .andThen( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( e -> e.getProgram(), CommonValidations::notBlank, error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
