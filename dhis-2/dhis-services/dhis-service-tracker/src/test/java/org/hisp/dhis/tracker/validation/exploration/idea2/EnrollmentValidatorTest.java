@@ -29,6 +29,7 @@ package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1069;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.EnrollmentValidator.enrollmentValidator;
@@ -103,7 +104,27 @@ class EnrollmentValidatorTest
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );
-        assertContainsOnly( List.of( E1048, E1122, E1025, E1119 ), errors );
+        assertContainsOnly( List.of( E1069, E1048, E1122, E1025, E1119 ), errors );
+    }
+
+    @Test
+    void testEnrollmentWithProgramNull()
+    {
+        Enrollment enrollment = new Enrollment();
+        enrollment.setTrackedEntity( "Nav6inZRw1u" ); // TODO change uid
+        enrollment.setOrgUnit( MetadataIdentifier.ofUid( "Nav6inZRw1u" ) );
+        // validation error E1122: program not set
+        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
+        // validation error E1069: will not trigger as there is not even a
+        // program to check in the preheat
+
+        ValidatorNode<Enrollment> validator = enrollmentValidator();
+
+        List<Error> validation = validator.validate( bundle, enrollment );
+
+        assertFalse( validation.isEmpty() );
+        List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );
+        assertContainsOnly( List.of( E1069, E1048, E1122, E1025 ), errors );
     }
 
     private static Note note( String uid, String value )

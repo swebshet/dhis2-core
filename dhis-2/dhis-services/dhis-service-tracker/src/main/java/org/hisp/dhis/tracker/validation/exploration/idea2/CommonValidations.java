@@ -27,7 +27,15 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea2;
 
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1069;
+import static org.hisp.dhis.tracker.validation.exploration.idea2.Error.error;
+
+import java.util.Optional;
+
+import org.hisp.dhis.program.Program;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.validation.exploration.idea1.Validator;
 
 /**
@@ -45,5 +53,32 @@ class CommonValidations
         }
 
         return id.isNotBlank();
+    }
+
+    public static Optional<Error> programInPreheat( TrackerBundle bundle, MetadataIdentifier id )
+    {
+        TrackerPreheat preheat = bundle.getPreheat();
+
+        // TODO ahhhh, no I need the class
+        Program p = preheat.get( Program.class, id );
+        if ( p == null )
+        {
+            return Optional.of( error( preheat.getIdSchemes(), E1069, id ) );
+        }
+
+        return Optional.empty();
+    }
+
+    // Optional<Error> apply(TrackerBundle bundle, T input )
+    public static Optional<Error> inPreheat( TrackerBundle bundle, MetadataIdentifier id )
+    {
+        TrackerPreheat preheat = bundle.getPreheat();
+
+        // TODO ahhhh, no I need the class :joy:
+        // preheat.get(id);
+        // return Optional.of(error(preheat.getIdSchemes(), E1069, id));
+
+        // return id.isNotBlank();
+        return Optional.empty();
     }
 }

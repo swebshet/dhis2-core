@@ -63,16 +63,15 @@ public class EnrollmentValidator
 
     public static ValidatorNode<Enrollment> enrollmentValidator()
     {
+        // TODO create a tree of validations; right now they are all just run
+        // independently
         return new ValidatorNode<Enrollment>()
             .andThen( uidProperties() )
             .andThen( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( e -> e.getProgram(), CommonValidations::notBlank, error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
+            .andThen( e -> e.getProgram(), CommonValidations::programInPreheat )
             .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .andThen( Enrollment::getNotes, noDuplicateNotes() );
-
-        // Not sure if this version is actually needed.
-        // I mean we already have the version with map, Validator
-        // so why not
     }
 }
