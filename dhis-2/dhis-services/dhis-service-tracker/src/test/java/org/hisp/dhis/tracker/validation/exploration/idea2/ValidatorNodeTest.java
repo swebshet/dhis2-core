@@ -25,13 +25,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.tree;
+package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1000;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1080;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E9999;
-import static org.hisp.dhis.tracker.validation.exploration.tree.ValidationNode.node;
+import static org.hisp.dhis.tracker.validation.exploration.idea2.ValidatorNode.validate;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -46,7 +46,7 @@ import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.report.TrackerErrorCode;
 import org.junit.jupiter.api.Test;
 
-class NodeTest
+class ValidatorNodeTest
 {
 
     @Test
@@ -65,10 +65,10 @@ class NodeTest
         // so client code is more similar to IDEA1
 
         // TODO work on a root later, lets get a simple validation going
-        // ValidationNode<Enrollment> root = node() // acts as a ValidationNode
+        // ValidatorNode<Enrollment> root = node() // acts as a ValidatorNode
         // with Function.identity()
         // .validate();
-        // ValidationNode<Enrollment> root = node(validator);
+        // ValidatorNode<Enrollment> root = node(validator);
 
         // Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 )
         Function<Boolean, Optional<Error>> predicateToError = b -> {
@@ -100,13 +100,13 @@ class NodeTest
     {
 
         // TODO 1: 2 independent validators
-        // how do I apply the validation an go from ValidationNode<Enrollment>
-        // to ValidationNode<Optional<Error>> ?
-        ValidationNode<Enrollment> root = new ValidationNode<Enrollment>()
-            .add( node( e -> Optional.of( error( E1048 ) ) ) )
-            .add( node( e -> Optional.of( error( E1000 ) ) ) );
+        // how do I apply the validation an go from ValidatorNode<Enrollment>
+        // to ValidatorNode<Optional<Error>> ?
+        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+            .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
-        // ValidationNode<Optional<Error>> result = root.map(new Enrollment());
+        // ValidatorNode<Optional<Error>> result = root.map(new Enrollment());
         // TODO is it map or actually apply? I mean every node is a function
         // which maps
         Node<Optional<Error>> result = root.map( new Enrollment() );
@@ -121,11 +121,11 @@ class NodeTest
     void testDependentValidators()
     {
 
-        ValidationNode<Enrollment> root = new ValidationNode<Enrollment>()
-            .add(
-                node( (Function<Enrollment, Optional<Error>>) e -> Optional.of( error( E1048 ) ) )
-                    .add( node( e -> Optional.of( error( E9999 ) ) ) ) )
-            .add( node( e -> Optional.of( error( E1080 ) ) ) );
+        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+            .andThen(
+                validate( (Function<Enrollment, Optional<Error>>) e -> Optional.of( error( E1048 ) ) )
+                    .andThen( validate( e -> Optional.of( error( E9999 ) ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         // TODO is it map or actually apply? I mean every node is a function
         // which maps

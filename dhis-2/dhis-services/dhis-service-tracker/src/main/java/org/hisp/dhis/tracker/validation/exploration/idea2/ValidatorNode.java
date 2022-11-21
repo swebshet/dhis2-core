@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.tree;
+package org.hisp.dhis.tracker.validation.exploration.idea2;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,37 +37,43 @@ import java.util.function.Function;
 // If some nodes func are only transformations than the children need to match the return type R of the func of their
 // parent.
 // if the node itself
-public class ValidationNode<T> implements Node<Function<T, Optional<Error>>>
+public class ValidatorNode<T> implements Node<Function<T, Optional<Error>>>
 {
 
     private final Function<T, Optional<Error>> func;
 
-    private final List<ValidationNode<T>> children = new ArrayList<>();
+    private final List<ValidatorNode<T>> children = new ArrayList<>();
 
-    public ValidationNode()
+    public ValidatorNode()
     {
         this.func = t -> Optional.empty();
     }
 
-    public ValidationNode( Function<T, Optional<Error>> func )
+    public ValidatorNode( Function<T, Optional<Error>> func )
     {
         this.func = func;
     }
 
-    // TODO this does not work
-    public static <T> ValidationNode<T> node()
+    // TODO this does not work without casting hell
+    public static <T> ValidatorNode<T> validate()
     {
-        return new ValidationNode<T>( t -> Optional.empty() );
+        return new ValidatorNode<T>( t -> Optional.empty() );
     }
 
-    public static <T, R> ValidationNode<T> node( Function<T, Optional<Error>> func )
+    public static <T> ValidatorNode<T> validate( Function<T, Optional<Error>> func )
     {
-        return new ValidationNode<>( func );
+        return new ValidatorNode<T>( func );
     }
 
-    public ValidationNode<T> add( ValidationNode<T> child )
+    /**
+     * Validate after only if this validation does not return an error.
+     *
+     * @param after validator to apply after this validator
+     * @return
+     */
+    public ValidatorNode<T> andThen( ValidatorNode<T> after )
     {
-        this.children.add( child );
+        this.children.add( after );
         return this;
     }
 
@@ -86,7 +92,7 @@ public class ValidationNode<T> implements Node<Function<T, Optional<Error>>>
     }
 
     // TODO is this map or rather visit?
-    public void visit( ValidationNode<T> root, T input, Consumer<Optional<Error>> consumer )
+    public void visit( ValidatorNode<T> root, T input, Consumer<Optional<Error>> consumer )
     {
         if ( root == null )
         {
@@ -106,7 +112,7 @@ public class ValidationNode<T> implements Node<Function<T, Optional<Error>>>
             return;
         }
 
-        for ( ValidationNode<T> child : root.children )
+        for ( ValidatorNode<T> child : root.children )
         {
             visit( child, input, consumer );
         }

@@ -36,15 +36,14 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
  * given input is valid.
  *
  * @param <T> type of input to be validated
- * @param <E> type of error found during validation
  */
 @FunctionalInterface
-public interface SimpleValidator<T, E> extends Validator<T, E>
+public interface SimpleValidator<T> extends Validator<T>
 {
 
-    Optional<E> apply( T input );
+    Optional<Error> apply( T input );
 
-    default Optional<E> apply( TrackerBundle bundle, T input )
+    default Optional<Error> apply( TrackerBundle bundle, T input )
     {
         return apply( input );
     }

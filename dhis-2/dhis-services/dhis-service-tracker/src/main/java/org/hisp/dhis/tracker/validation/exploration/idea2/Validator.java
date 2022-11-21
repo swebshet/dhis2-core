@@ -31,11 +31,8 @@ import java.util.Optional;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
-// TODO is there a way to limit E. Most Validators should only return one error so they stay small but we also need
-// Validators that are built using smaller ones and aggregate errors they find.
-// Maybe I am trying to fit 2 things together that do not fit. So maybe 2 interfaces are needed.
 @FunctionalInterface
-public interface Validator<T, E>
+public interface Validator<T>
 {
 
     // TODO TrackerBundle can be interpreted as a kind of ValidationContext.
@@ -43,5 +40,5 @@ public interface Validator<T, E>
     // read-only and much narrower than the bundle or even the preheat. The
     // bundle contains the entire payload so this can dilute the narrow
     // interface defined here again.
-    Optional<E> apply( TrackerBundle bundle, T input );
+    Optional<Error> apply( TrackerBundle bundle, T input );
 }
