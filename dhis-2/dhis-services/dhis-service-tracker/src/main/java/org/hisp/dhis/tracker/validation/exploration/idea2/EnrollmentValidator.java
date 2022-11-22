@@ -57,6 +57,10 @@ public class EnrollmentValidator
     {
         return new ValidatorNode<Enrollment>()
             .andThen( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
+        // TODO I have an idea of how to make this work
+        // It might be best though to first think about how invalid notes could
+        // be tagged/collected at the end of the validation
+        // first
         // .validateEach( Enrollment::getNotes, Note::getNote,
         // CodeGenerator::isValidUid, error( E1048 ) ); //
         // PreCheckUidValidationHook
