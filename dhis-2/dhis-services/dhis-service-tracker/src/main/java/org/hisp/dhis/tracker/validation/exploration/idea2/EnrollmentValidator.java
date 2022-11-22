@@ -64,7 +64,7 @@ public class EnrollmentValidator
 
     public static ValidatorNode<Enrollment> enrollmentValidator()
     {
-        // TODO create a tree of validations; right now they are all just run
+        // TODO create a tree of validations; right now they are mostly run
         // independently
         return new ValidatorNode<Enrollment>()
             .andThen( uidProperties() )

@@ -95,6 +95,20 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         } );
     }
 
+    public static <T> ValidatorNode<T> validate( Predicate<T> validator,
+        BiFunction<TrackerIdSchemeParams, T, Error> error )
+    {
+        return new ValidatorNode<>( ( bundle, input ) -> {
+
+            if ( validator.test( input ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
+        } );
+    }
+
     /**
      * Validate after only if this validation does not return an error.
      *
@@ -137,17 +151,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
     public ValidatorNode<T> andThen( Predicate<T> after, BiFunction<TrackerIdSchemeParams, T, Error> error )
     {
-
-        this.children.add( new ValidatorNode<>( ( bundle, input ) -> {
-
-            if ( after.test( input ) )
-            {
-                return Optional.empty();
-            }
-
-            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
-
-        } ) );
+        this.children.add( validate( after, error ) );
         return this;
     }
 
@@ -166,17 +170,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     public <S> ValidatorNode<T> andThen( Function<T, S> map, Predicate<S> after,
         BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
-        this.children.add( new ValidatorNode<>( ( bundle, input ) -> {
-
-            S mappedInput = map.apply( input );
-            if ( after.test( mappedInput ) )
-            {
-                return Optional.empty();
-            }
-
-            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
-
-        } ) );
+        this.children.add( validate( map, after, error ) );
         return this;
     }
 
@@ -219,7 +213,6 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         return validator;
     }
 
-    // TODO pass in bundle
     public Node<Optional<Error>> apply( TrackerBundle bundle, T input )
     {
         ErrorNode result = new ErrorNode();

@@ -77,52 +77,6 @@ class ValidatorNodeTest
     }
 
     @Test
-    void testFunctions()
-    {
-
-        // TODO add into the IDEA markdown
-        // everything is just a transformation
-        // Enrollment -> String -> Predicate<String> -> boolean ->
-        // Optional<Error>
-        // Enrollment::getEnrollment -> CodeGenerator::isValidUid
-
-        // let's first do the work on the client of providing a Function<T,
-        // Optional<Error>
-        // later I can add nice helpers that allow passing individual functions
-        // so client code is more similar to IDEA1
-
-        // TODO work on a root later, lets get a simple validation going
-        // ValidatorNode<Enrollment> root = node() // acts as a ValidatorNode
-        // with Function.identity()
-        // .validate();
-        // ValidatorNode<Enrollment> root = node(validator);
-
-        // Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 )
-        Function<Boolean, Optional<Error>> predicateToError = b -> {
-            if ( !b )
-            {
-                return Optional.of( error( E1048 ) );
-            }
-            return Optional.empty();
-        };
-        // One type of Validator
-        Function<Enrollment, Optional<Error>> validator = ((Function<Enrollment, String>) Enrollment::getEnrollment) // optional
-                                                                                                                     // transformation
-            .andThen( CodeGenerator::isValidUid ) // predicate
-            .andThen( predicateToError ); // map result of predicate (boolean)
-                                          // to Optional<Error>
-
-        Enrollment enrollment = new Enrollment();
-        // validation error: invalid UID
-        enrollment.setEnrollment( "invalid" );
-
-        Optional<Error> result = validator.apply( enrollment );
-
-        assertTrue( result.isPresent() );
-        assertEquals( E1048, result.get().getCode() );
-    }
-
-    @Test
     void testIndependentValidators()
     {
 
@@ -155,6 +109,52 @@ class ValidatorNodeTest
         root.visit( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
 
         assertContainsOnly( List.of( E1048, E1080 ), errs );
+    }
+
+    @Test
+    void testFunctions()
+    {
+
+        // TODO add into the IDEA markdown
+        // everything is just a transformation
+        // Enrollment -> String -> Predicate<String> -> boolean ->
+        // Optional<Error>
+        // Enrollment::getEnrollment -> CodeGenerator::isValidUid
+
+        // let's first do the work on the client of providing a Function<T,
+        // Optional<Error>
+        // later I can add nice helpers that allow passing individual functions
+        // so client code is more similar to IDEA1
+
+        // TODO work on a root later, lets get a simple validation going
+        // ValidatorNode<Enrollment> root = node() // acts as a ValidatorNode
+        // with Function.identity()
+        // .validate();
+        // ValidatorNode<Enrollment> root = node(validator);
+
+        // Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 )
+        Function<Boolean, Optional<Error>> predicateToError = b -> {
+            if ( !b )
+            {
+                return Optional.of( error( E1048 ) );
+            }
+            return Optional.empty();
+        };
+        // One type of Validator
+        Function<Enrollment, Optional<Error>> validator = ((Function<Enrollment, String>) Enrollment::getEnrollment) // optional
+            // transformation
+            .andThen( CodeGenerator::isValidUid ) // predicate
+            .andThen( predicateToError ); // map result of predicate (boolean)
+        // to Optional<Error>
+
+        Enrollment enrollment = new Enrollment();
+        // validation error: invalid UID
+        enrollment.setEnrollment( "invalid" );
+
+        Optional<Error> result = validator.apply( enrollment );
+
+        assertTrue( result.isPresent() );
+        assertEquals( E1048, result.get().getCode() );
     }
 
     private static Error error( TrackerErrorCode code )
