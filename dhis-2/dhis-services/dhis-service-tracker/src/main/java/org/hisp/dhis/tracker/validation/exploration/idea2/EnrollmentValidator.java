@@ -32,6 +32,7 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.tracker.validation.exploration.idea2.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.idea2.ValidatorNode.validate;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -68,8 +69,11 @@ public class EnrollmentValidator
         return new ValidatorNode<Enrollment>()
             .andThen( uidProperties() )
             .andThen( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .andThen( e -> e.getProgram(), CommonValidations::notBlank, error( E1122, "program" ) ) // PreCheckMandatoryFieldsValidationHook
-            .andThen( e -> e.getProgram(), CommonValidations::programInPreheat )
+            .andThen(
+                validate( Enrollment::getProgram, CommonValidations::notBlank, error( E1122, "program" ) )
+                    .andThen( Enrollment::getProgram, CommonValidations::programInPreheat ) )// PreCheckMandatoryFieldsValidationHook
+                                                                                             // andThen
+                                                                                             // PreCheckMetaValidationHook
             .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
             .andThen( Enrollment::getNotes, noDuplicateNotes() );

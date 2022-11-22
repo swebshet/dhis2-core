@@ -80,6 +80,21 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         return new ValidatorNode<>( validator );
     }
 
+    public static <T, S> ValidatorNode<T> validate( Function<T, S> map, Predicate<S> validator,
+        BiFunction<TrackerIdSchemeParams, S, Error> error )
+    {
+        return new ValidatorNode<>( ( bundle, input ) -> {
+
+            S mappedInput = map.apply( input );
+            if ( validator.test( mappedInput ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
+        } );
+    }
+
     /**
      * Validate after only if this validation does not return an error.
      *

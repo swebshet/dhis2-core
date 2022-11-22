@@ -66,6 +66,7 @@ back for every error does not mean our code needs pass on the burden to every va
 * Re-read the issue and some other difficulties we have
 * Play with a more complex validations. Try to port more validations over.
 * how can I generalize what I have more? would that even help?
+* print the tree of validations :)
 * how to return one warning or one error? the orchestration needs to be able to distinguish between the two, so it can
   decide if we should stop the validation, not import a given entity. How many warnings do we even have? I would argue that
   the duplicate notes case should actually be an error, or not?
