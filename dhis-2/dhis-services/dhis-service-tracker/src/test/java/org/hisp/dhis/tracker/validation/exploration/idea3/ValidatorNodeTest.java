@@ -156,17 +156,11 @@ class ValidatorNodeTest
     }
 
     @Test
-    void testValidatorOnCollectionTODO()
+    void testCollectionValidator()
     {
-        // TODO create a validator that given a Collection<T> it creates a
-        // Node<Validator<T>>
-        // where each child is a validation of an element in the collection
-
-        List<Note> notes = List.of( Note.builder().note( "foo" ).build(), Note.builder().note( "faa" ).build() );
-
-        // T -> Collection<S>
-        Function<Enrollment, List<Note>> getNotes = Enrollment::getNotes;
-        // Validator<S>
+        List<Note> notes = List.of(
+            Note.builder().note( "foo" ).build(),
+            Note.builder().note( "faa" ).build() );
 
         CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
             ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
