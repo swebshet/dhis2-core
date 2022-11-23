@@ -44,6 +44,12 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 // there is a collision unless I rename one of them
 // Validator: Optional<Error> apply( TrackerBundle bundle, T input );
 // (Validator)Node: Node<Validator<<Error>> apply( TrackerBundle bundle, T input );
+//
+// like
+// implements Node<Validator<T>>, Validator<T, List<Optional<Error>>>
+// this would mean that the Validator interface gets more generic; not
+// sure if there is a way to circumvent most Validator implementations having to deal with
+// this
 /**
  * ValidatorNode is a hierarchical {@link Validator}.
  *
@@ -195,6 +201,9 @@ public class ValidatorNode<T> implements Node<Validator<T>>
             current = stack.pop();
 
             Optional<Error> error = current.validator.apply( bundle, input );
+            // TODO this is to accommodate the root Validator which should end
+            // up as a root
+            // on the result ErrorNode and not be a child of an empty ErrorNode
             if ( result == null )
             {
                 result = new ErrorNode( error );
@@ -206,7 +215,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
             if ( error.isPresent() )
             {
-                // skip visiting children
+                // only visit children of valid parents
                 continue;
             }
 
@@ -250,7 +259,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
             if ( Boolean.FALSE.equals( visit.apply( current.validator ) ) )
             {
-                // skip visiting children
+                // only visit children of valid parents
                 continue;
             }
 

@@ -82,8 +82,9 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
             // map over input collection and apply validator to each element
             // create a node collecting all the nodes into children of ErrorNode
 
-            // TODO the root is again a little bit awkward
-            // I need one to attach the children to
+            // TODO this is to accommodate the root Validator which should end
+            // up as a root
+            // on the result ErrorNode and not be a child of an empty ErrorNode
             if ( result == null )
             {
                 result = new ErrorNode();

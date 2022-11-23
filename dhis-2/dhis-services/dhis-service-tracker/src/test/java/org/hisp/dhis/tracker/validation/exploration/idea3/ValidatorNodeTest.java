@@ -159,8 +159,8 @@ class ValidatorNodeTest
     void testCollectionValidator()
     {
         List<Note> notes = List.of(
-            Note.builder().note( "foo" ).build(),
-            Note.builder().note( "faa" ).build() );
+            Note.builder().note( "one" ).build(),
+            Note.builder().note( "two" ).build() );
 
         CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
             ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
