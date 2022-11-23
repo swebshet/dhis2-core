@@ -39,11 +39,18 @@ import java.util.function.Predicate;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
+// TODO I think a ValidatorNode could/maybe should actually be a Validator
+// issue is with the interface signatures as the return type is not part of the signature
+// there is a collision unless I rename one of them
+// Validator: Optional<Error> apply( TrackerBundle bundle, T input );
+// (Validator)Node: Node<Validator<<Error>> apply( TrackerBundle bundle, T input );
+/**
+ * ValidatorNode is a hierarchical {@link Validator}.
+ *
+ * @param <T> type of entity to be validated
+ */
 public class ValidatorNode<T> implements Node<Validator<T>>
 {
-
-    private final boolean root = false;
-
     private final Validator<T> validator;
 
     private final List<ValidatorNode<T>> children = new ArrayList<>();
