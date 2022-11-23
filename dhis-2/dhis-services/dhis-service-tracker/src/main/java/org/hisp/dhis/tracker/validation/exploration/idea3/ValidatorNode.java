@@ -122,9 +122,6 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         return this;
     }
 
-    // TODO I could add an andThen(Function<T,S> map, ValidatorNode<S> after)
-    // where map is applied to the node and its children
-
     /**
      * Validate after only if this validation does not return an error.
      *
@@ -183,50 +180,30 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
     public ErrorNode apply( TrackerBundle bundle, T input )
     {
-        return this.apply( this, bundle, input );
-    }
+        // TODO I would love to reuse traverseDepthFirst but cannot due to
+        // effectively final constraint
+        ErrorNode result = new ErrorNode();
 
-    private ErrorNode apply( ValidatorNode<T> root, TrackerBundle bundle, T input )
-    {
-
-        ErrorNode result = null;
-        ValidatorNode<T> current;
-        Stack<ValidatorNode<T>> stack = new Stack<>();
-        stack.push( root );
-
-        while ( !stack.empty() )
-        {
-            current = stack.pop();
-
-            Optional<Error> error = current.validator.apply( bundle, input );
-            if ( result == null )
-            {
-                result = new ErrorNode( error );
-            }
-            else
-            {
-                result.add( new ErrorNode( error ) );
-            }
+        traverseDepthFirst( this, validator -> {
+            Optional<Error> error = validator.apply( bundle, input );
+            result.add( new ErrorNode( error ) );
 
             // only visit children of valid parents
             if ( error.isPresent() )
             {
-                continue;
+                return false;
             }
 
-            for ( ValidatorNode<T> child : current.children )
-            {
-                stack.push( child );
-            }
-        }
+            return true;
+        } );
 
         return result;
     }
 
     public void apply( TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
     {
-        traverseDepthFirst( this, node -> {
-            Optional<Error> error = node.get().apply( bundle, input );
+        traverseDepthFirst( this, validator -> {
+            Optional<Error> error = validator.apply( bundle, input );
             consumer.accept( error );
 
             // TODO there might be value in visiting all nodes or only the
@@ -245,14 +222,14 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     }
 
     /**
-     * Traverse the node in depth-first order. Nodes are passed to the visit
-     * function. Children will not be visited if visit returns false.
+     * Traverse the node in depth-first order. Validators are passed to the
+     * visit function. Children will not be visited if visit returns false.
      *
      * @param root traverse node and its children
-     * @param visit called with the current node, skip visiting children on
+     * @param visit called with the current validator, skip visiting children on
      *        false
      */
-    public void traverseDepthFirst( ValidatorNode<T> root, Function<ValidatorNode<T>, Boolean> visit )
+    public void traverseDepthFirst( ValidatorNode<T> root, Function<Validator<T>, Boolean> visit )
     {
 
         ValidatorNode<T> current;
@@ -263,7 +240,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         {
             current = stack.pop();
 
-            if ( Boolean.FALSE.equals( visit.apply( current ) ) )
+            if ( Boolean.FALSE.equals( visit.apply( current.validator ) ) )
             {
                 // skip visiting children
                 continue;
