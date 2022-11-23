@@ -85,20 +85,15 @@ class ValidatorNodeTest
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
         ErrorNode errNodes = root.apply( bundle, new Enrollment() );
-
         assertEquals( 2, errNodes.getChildren().size() );
-        for ( ErrorNode node : errNodes.getChildren() )
-        {
-            System.out.println( node.get() );
-        }
 
         List<TrackerErrorCode> errs = new ArrayList<>();
         root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
-        assertContainsOnly( List.of( E1048, E1000 ), errs );
+        assertEquals( List.of( E1000, E1048 ), errs );
     }
 
     @Test
-    void testDependentValidators()
+    void testDependentValidatorsWillNotApplyToChildIfParentErrors()
     {
 
         ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
@@ -107,12 +102,29 @@ class ValidatorNodeTest
                     .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
-        Node<Optional<Error>> result = root.apply( bundle, new Enrollment() );
+        ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+        assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
         root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        assertEquals( List.of( E1080, E1048 ), errs );
+    }
 
-        assertContainsOnly( List.of( E1048, E1080 ), errs );
+    @Test
+    void testDependentValidatorsAppliesToChildIfParentPasses()
+    {
+
+        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+            .andThen( validate( (SimpleValidator<Enrollment>) e1 -> Optional.empty() )
+                .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
+
+        ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+        assertEquals( 3, errNodes.getChildren().size() );
+
+        List<TrackerErrorCode> errs = new ArrayList<>();
+        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        assertEquals( List.of( E1080, E9999 ), errs );
     }
 
     @Test

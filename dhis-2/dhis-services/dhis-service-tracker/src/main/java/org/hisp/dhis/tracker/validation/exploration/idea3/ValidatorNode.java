@@ -180,23 +180,41 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
     public ErrorNode apply( TrackerBundle bundle, T input )
     {
-        // TODO I would love to reuse traverseDepthFirst but cannot due to
-        // effectively final constraint
-        ErrorNode result = new ErrorNode();
+        return this.apply( this, bundle, input );
+    }
 
-        traverseDepthFirst( this, validator -> {
-            Optional<Error> error = validator.apply( bundle, input );
-            result.add( new ErrorNode( error ) );
+    public ErrorNode apply( ValidatorNode<T> root, TrackerBundle bundle, T input )
+    {
+        ErrorNode result = null;
+        ValidatorNode<T> current;
+        Stack<ValidatorNode<T>> stack = new Stack<>();
+        stack.push( root );
 
-            // only visit children of valid parents
-            if ( error.isPresent() )
+        while ( !stack.empty() )
+        {
+            current = stack.pop();
+
+            Optional<Error> error = current.validator.apply( bundle, input );
+            if ( result == null )
             {
-                return false;
+                result = new ErrorNode( error );
+            }
+            else
+            {
+                result.add( new ErrorNode( error ) );
             }
 
-            return true;
-        } );
+            if ( error.isPresent() )
+            {
+                // skip visiting children
+                continue;
+            }
 
+            for ( ValidatorNode<T> child : current.children )
+            {
+                stack.push( child );
+            }
+        }
         return result;
     }
 
@@ -205,11 +223,6 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         traverseDepthFirst( this, validator -> {
             Optional<Error> error = validator.apply( bundle, input );
             consumer.accept( error );
-
-            // TODO there might be value in visiting all nodes or only the
-            // behavior
-            // of valid roots children
-            // lets make it work for the default
 
             // only visit children of valid parents
             if ( error.isPresent() )
