@@ -32,7 +32,6 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1080;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E9999;
 import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.validate;
-import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -170,15 +169,14 @@ class ValidatorNodeTest
         // Validator<S>
 
         CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
-            ( __, n ) -> {
-                System.out.println( n );
-                return Optional.of( error( E1000, n.getNote() ) );
-            } );
+            ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
+
+        ErrorNode errNodes = root.apply( bundle, notes );
+        assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.visit( bundle, notes, o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
-
-        assertContainsOnly( List.of( E1000, E1000 ), errs );
+        root.apply( bundle, notes, o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        assertEquals( List.of( E1000, E1000 ), errs );
     }
 
     private static Error error( TrackerErrorCode code )

@@ -225,12 +225,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
             consumer.accept( error );
 
             // only visit children of valid parents
-            if ( error.isPresent() )
-            {
-                return false;
-            }
-
-            return true;
+            return error.isEmpty();
         } );
     }
 

@@ -31,11 +31,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
+/**
+ * CollectionValidatorNode is a hierarchical {@link Validator} that applies each
+ * a Validator to each element of type T in a collection of type T.
+ *
+ * @param <T> type of entity to be validated
+ */
 public class CollectionValidatorNode<T> implements Node<Validator<Collection<? extends T>>>
 {
 
@@ -56,57 +63,105 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
         return null;
     }
 
-    public void visit( TrackerBundle bundle, Collection<? extends T> input, Consumer<Optional<Error>> consumer )
+    public ErrorNode apply( TrackerBundle bundle, Collection<? extends T> input )
     {
-        visit( this, bundle, input, consumer );
+        return this.apply( this, bundle, input );
     }
 
-    // TODO is this map or rather visit? I think for map it needs to take a
-    // Function<T, S> so be more generic
-    public void visit( CollectionValidatorNode<T> root, TrackerBundle bundle, Collection<? extends T> input,
-        Consumer<Optional<Error>> consumer )
+    public ErrorNode apply( CollectionValidatorNode<T> root, TrackerBundle bundle, Collection<? extends T> input )
     {
-        if ( root == null )
+        ErrorNode result = null;
+        CollectionValidatorNode<T> current;
+        Stack<CollectionValidatorNode<T>> stack = new Stack<>();
+        stack.push( root );
+
+        while ( !stack.empty() )
         {
-            return;
+            current = stack.pop();
+
+            // map over input collection and apply validator to each element
+            // create a node collecting all the nodes into children of ErrorNode
+
+            // TODO the root is again a little bit awkward
+            // I need one to attach the children to
+            if ( result == null )
+            {
+                result = new ErrorNode();
+            }
+            boolean skipChildren = false;
+            for ( T in : input )
+            {
+                Optional<Error> error = root.validator.apply( bundle, in );
+                if ( error.isPresent() )
+                {
+                    skipChildren = true;
+                }
+                result.add( new ErrorNode( error ) );
+            }
+
+            // only visit children of valid parents
+            if ( skipChildren )
+            {
+                continue;
+            }
+
+            for ( CollectionValidatorNode<T> child : current.children )
+            {
+                stack.push( child );
+            }
         }
-
-        // TODO refactor visit so that what we actually produce is a tree!
-        // maybe then adapt it to accept a consumer as well?
-
-        // map over input apply validator and create a node
-        // collect all the nodes into children of a Node<Optional<Error>>
-        List<Optional<Error>> errs = input.stream().map( i -> {
-            Optional<Error> optionalError = root.validator.apply( bundle, i );
-            consumer.accept( optionalError );
-            return optionalError;
-        } ).collect( Collectors.toList() );
-
-        // TODO there might be value in visiting all nodes or only the behavior
-        // of valid roots children
-        // lets make it work for the default
-
-        // only visit children of valid parents
-        Optional<Error> optionalError = errs.stream().filter( Optional::isPresent ).findFirst()
-            .orElse( Optional.empty() );
-        if ( optionalError.isPresent() )
-        {
-            return;
-        }
-
-        for ( CollectionValidatorNode<T> child : root.children )
-        {
-            visit( child, bundle, input, consumer );
-        }
-    }
-
-    public Node<Optional<Error>> apply( TrackerBundle bundle, Collection<? extends T> input )
-    {
-        ErrorNode result = new ErrorNode();
-
-        this.visit( this, bundle, input, opt -> result.add( new ErrorNode( opt ) ) );
-
         return result;
+    }
+
+    public void apply( TrackerBundle bundle, Collection<? extends T> input, Consumer<Optional<Error>> consumer )
+    {
+        traverseDepthFirst( this, validator -> {
+            boolean skipChildren = false;
+            for ( T in : input )
+            {
+                Optional<Error> error = validator.apply( bundle, in );
+                if ( error.isPresent() )
+                {
+                    skipChildren = true;
+                }
+                consumer.accept( error );
+            }
+
+            // only visit children of valid parents
+            return !skipChildren;
+        } );
+    }
+
+    /**
+     * Traverse the node in depth-first order. Validators are passed to the
+     * visit function. Children will not be visited if visit returns false.
+     *
+     * @param root traverse node and its children
+     * @param visit called with the current validator, skip visiting children on
+     *        false
+     */
+    public void traverseDepthFirst( CollectionValidatorNode<T> root, Function<Validator<T>, Boolean> visit )
+    {
+
+        CollectionValidatorNode<T> current;
+        Stack<CollectionValidatorNode<T>> stack = new Stack<>();
+        stack.push( root );
+
+        while ( !stack.empty() )
+        {
+            current = stack.pop();
+
+            if ( Boolean.FALSE.equals( visit.apply( current.validator ) ) )
+            {
+                // skip visiting children
+                continue;
+            }
+
+            for ( CollectionValidatorNode<T> child : current.children )
+            {
+                stack.push( child );
+            }
+        }
     }
 
     // TODO this is just a helper for testing right now. Not sure yet how this
@@ -115,7 +170,7 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
     public List<Error> validate( TrackerBundle bundle, Collection<? extends T> input )
     {
         List<Error> errs = new ArrayList<>();
-        this.visit( bundle, input, o -> o.ifPresent( errs::add ) );
+        this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
         return errs;
     }
 }
