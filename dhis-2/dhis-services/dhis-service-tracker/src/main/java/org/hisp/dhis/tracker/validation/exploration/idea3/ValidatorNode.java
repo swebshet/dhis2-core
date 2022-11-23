@@ -198,18 +198,18 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         {
             current = stack.pop();
 
-            Optional<Error> optionalError = current.validator.apply( bundle, input );
+            Optional<Error> error = current.validator.apply( bundle, input );
             if ( result == null )
             {
-                result = new ErrorNode( optionalError );
+                result = new ErrorNode( error );
             }
             else
             {
-                result.add( new ErrorNode( optionalError ) );
+                result.add( new ErrorNode( error ) );
             }
 
             // only visit children of valid parents
-            if ( optionalError.isPresent() )
+            if ( error.isPresent() )
             {
                 continue;
             }
@@ -226,8 +226,8 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     public void apply( TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
     {
         traverseDepthFirst( this, node -> {
-            Optional<Error> optionalError = node.get().apply( bundle, input );
-            consumer.accept( optionalError );
+            Optional<Error> error = node.get().apply( bundle, input );
+            consumer.accept( error );
 
             // TODO there might be value in visiting all nodes or only the
             // behavior
@@ -235,7 +235,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
             // lets make it work for the default
 
             // only visit children of valid parents
-            if ( optionalError.isPresent() )
+            if ( error.isPresent() )
             {
                 return false;
             }

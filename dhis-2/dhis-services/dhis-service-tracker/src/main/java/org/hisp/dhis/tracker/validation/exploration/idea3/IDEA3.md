@@ -58,6 +58,12 @@ back for every error does not mean our code needs pass on the burden to every va
 * refactor the ValidatorNode apply/visit
   what I want is it to build a tree on apply like it already suggests using return type Node<Optional<Error>>
 
+* issue with effectively final and the root ending up as a child
+* I suspect there is an interface for ValidatorNode and Node waiting to be discovered
+  if CollectionValidator and current ValidatorNode work well together
+  and an ErrorNode might be an implementation of a Node
+  Node could house some default traversal methods
+
 * make it more readable and comparable in its use to idea1
 * how can I implement the validateEach I had in idea1 for validating collections using simple validators?
   it would be cool if a ValidatorNode could create multiple Node<Optional<Error>> when applied/mapped/visited
