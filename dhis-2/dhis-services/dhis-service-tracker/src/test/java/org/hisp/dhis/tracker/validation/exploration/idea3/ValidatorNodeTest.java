@@ -40,7 +40,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
@@ -84,6 +83,7 @@ class ValidatorNodeTest
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
         ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+
         assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
@@ -102,6 +102,7 @@ class ValidatorNodeTest
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+
         assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
@@ -119,6 +120,8 @@ class ValidatorNodeTest
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+
+        // the parent of E9999 is an empty ErrorNode
         assertEquals( 3, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
@@ -127,22 +130,45 @@ class ValidatorNodeTest
     }
 
     @Test
-    void testValidatorOnCollection()
+    void testCollectionValidator()
+    {
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note 1" ),
+            note( "olfXZzSGacW", "note 2" ) );
+
+        CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
+            ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
+
+        ErrorNode errNodes = root.apply( bundle, notes );
+
+        assertEquals( 2, errNodes.getChildren().size() );
+        List<TrackerErrorCode> errs = new ArrayList<>();
+        root.apply( bundle, notes, o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        assertEquals( List.of( E1000, E1000 ), errs );
+    }
+
+    // TODO how to connect the CollectionValidatorNode with the ValidatorNode?
+    @Test
+    void testConnectingCollectionValidatorWithValidatorNode()
     {
 
         Enrollment enrollment = new Enrollment();
-        List<Note> notes = List.of( Note.builder().note( "foo" ).build(), Note.builder().note( "faa" ).build() );
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note 1" ),
+            note( "olfXZzSGacW", "note 2" ) );
         enrollment.setNotes( notes );
 
         // T -> Collection<S>
         Function<Enrollment, List<Note>> getNotes = Enrollment::getNotes;
         // Validator<S>
-        List<Optional<Error>> errs = getNotes.apply( enrollment ).stream().map( n -> {
-            System.out.println( n.getNote() );
-            return Optional.of( error( E1000 ) );
-        } ).collect( Collectors.toList() );
 
-        // ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        CollectionValidatorNode<Note> noteValidator = new CollectionValidatorNode<>(
+            ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
+
+        // TODO I need to rely on an interface now
+        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+            .andThen( Enrollment::getNotes, noteValidator );
+
         // .andThen( each( Enrollment::getNotes, n -> {
         // System.out.println( n );
         // return Optional.of( error( E1000 ) );
@@ -155,24 +181,6 @@ class ValidatorNodeTest
         // assertContainsOnly( List.of( E1048, E1000 ), errs );
     }
 
-    @Test
-    void testCollectionValidator()
-    {
-        List<Note> notes = List.of(
-            Note.builder().note( "one" ).build(),
-            Note.builder().note( "two" ).build() );
-
-        CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
-            ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
-
-        ErrorNode errNodes = root.apply( bundle, notes );
-        assertEquals( 2, errNodes.getChildren().size() );
-
-        List<TrackerErrorCode> errs = new ArrayList<>();
-        root.apply( bundle, notes, o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
-        assertEquals( List.of( E1000, E1000 ), errs );
-    }
-
     private static Error error( TrackerErrorCode code )
     {
         return new Error( code, "" );
@@ -181,5 +189,10 @@ class ValidatorNodeTest
     private static Error error( TrackerErrorCode code, String message )
     {
         return new Error( code, "" );
+    }
+
+    private static Note note( String uid, String value )
+    {
+        return Note.builder().note( uid ).value( value ).build();
     }
 }

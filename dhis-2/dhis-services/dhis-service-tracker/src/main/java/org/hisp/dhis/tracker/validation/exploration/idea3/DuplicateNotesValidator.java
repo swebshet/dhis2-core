@@ -27,16 +27,14 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea3;
 
-import static org.apache.commons.lang3.StringUtils.isNotEmpty;
+import static org.apache.commons.lang3.ObjectUtils.isEmpty;
+import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1119;
+import static org.hisp.dhis.tracker.validation.exploration.idea3.Error.error;
 
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Note;
-import org.hisp.dhis.tracker.report.TrackerErrorCode;
 import org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook;
 import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 
@@ -45,51 +43,35 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
  * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
  * itself.
  */
-class DuplicateNotesValidator implements Validator<List<Note>>
+class DuplicateNotesValidator implements Validator<Note>
 {
 
-    public static Validator<List<Note>> noDuplicateNotes()
+    public static Validator<Note> noDuplicateNotes()
     {
         return new DuplicateNotesValidator();
     }
 
     @Override
-    public Optional<Error> apply( TrackerBundle bundle, List<Note> input )
+    public Optional<Error> apply( TrackerBundle bundle, Note note )
     {
-        final Set<String> duplicates = new HashSet<>();
-        for ( Note note : input )
-        {
-            if ( isNotEmpty( note.getValue() ) ) // Ignore notes with no text
-            {
-                // TODO this should not be allowed in our validations the
-                // original one is mutating the notes
-                // so to preserve the previous behavior we would need to find
-                // another way. If we pre-process the notes
-                // and remove duplicates we will not be able to issue a warning
-                // :grimacing:
-
-                // If a note having the same UID already exist in the db, raise
-                // warning, ignore the note and continue
-                if ( isNotEmpty( note.getNote() ) && bundle.getPreheat().getNote( note.getNote() ).isPresent() )
-                {
-                    duplicates.add( note.getNote() );
-                }
-            }
-        }
-
-        if ( duplicates.isEmpty() )
+        if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) ) // Ignore
+                                                                       // notes
+                                                                       // with
+                                                                       // no UID
+                                                                       // or no
+                                                                       // text
         {
             return Optional.empty();
         }
 
-        // TODO in the original validation we return a TrackerWarning; we could
-        // create a sum type of TrackerError/Warning
-        // so a validation can return either
+        // TODO in the original validation we return a TrackerWarning and ignore
+        // the note as the validation itself is
+        // mutating the notes.
+        if ( bundle.getPreheat().getNote( note.getNote() ).isPresent() )
+        {
+            return Optional.of( error( bundle.getPreheat().getIdSchemes(), E1119, note.getNote() ) );
+        }
 
-        String uids = String.join( ",", duplicates );
-        // TODO this should ideally already fill in the error message like
-        // error(E1119, args)
-        Error err = new Error( TrackerErrorCode.E1119, uids );
-        return Optional.of( err );
+        return Optional.empty();
     }
 }

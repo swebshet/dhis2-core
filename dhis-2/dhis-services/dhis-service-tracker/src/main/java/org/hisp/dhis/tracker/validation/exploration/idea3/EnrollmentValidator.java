@@ -30,7 +30,6 @@ package org.hisp.dhis.tracker.validation.exploration.idea3;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
-import static org.hisp.dhis.tracker.validation.exploration.idea3.DuplicateNotesValidator.noDuplicateNotes;
 import static org.hisp.dhis.tracker.validation.exploration.idea3.Error.error;
 import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.validate;
 
@@ -40,6 +39,7 @@ import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.Note;
 
 /**
  * Example class of how we would build our {@link Validator}s specific to our
@@ -66,6 +66,18 @@ public class EnrollmentValidator
         // PreCheckUidValidationHook
     }
 
+    public static ValidatorNode<Note> notes()
+    {
+        // TODO attach to the enrollmentValidator() once I get the
+        // CollectionValidator working
+        return new ValidatorNode<Note>();
+        // .validateEach( Enrollment::getNotes, Note::getNote,
+        // CodeGenerator::isValidUid, error( E1048 ) ); //
+        // PreCheckUidValidationHook
+        // .andThen( Enrollment::getNotes, noDuplicateNotes() );
+
+    }
+
     public static ValidatorNode<Enrollment> enrollmentValidator()
     {
         // TODO create a tree of validations; right now they are mostly run
@@ -79,7 +91,6 @@ public class EnrollmentValidator
                                                                                              // andThen
                                                                                              // PreCheckMetaValidationHook
             .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ) // EnrollmentDateValidationHook.validateMandatoryDates
-            .andThen( Enrollment::getNotes, noDuplicateNotes() );
+            .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
     }
 }

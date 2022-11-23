@@ -50,6 +50,12 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 // this would mean that the Validator interface gets more generic; not
 // sure if there is a way to circumvent most Validator implementations having to deal with
 // this
+
+// TODO alternative names?
+// ValidatorTree
+// HierarchicalValidator
+// ValidatorDependency
+// ...
 /**
  * ValidatorNode is a hierarchical {@link Validator}.
  *
@@ -138,6 +144,21 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     {
         this.children.add( new ValidatorNode<>(
             ( bundle, input ) -> after.apply( bundle, map.apply( input ) ) ) );
+        return this;
+    }
+
+    /**
+     * Validate after only if this validation does not return an error.
+     *
+     * @param after validator to apply after this validator
+     * @return
+     */
+    public <S> ValidatorNode<T> andThen( Function<T, S> map, ValidatorNode<S> after )
+    {
+        // TODO is this the same issue again :joy:
+        this.children.add( new ValidatorNode<>(
+            ( bundle, input ) -> after.apply( bundle, map.apply( input ) ) ) );
+        // this.children.add( after );
         return this;
     }
 

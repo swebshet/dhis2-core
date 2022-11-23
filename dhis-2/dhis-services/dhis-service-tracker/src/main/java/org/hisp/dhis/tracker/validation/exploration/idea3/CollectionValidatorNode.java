@@ -55,6 +55,21 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
         this.validator = validator;
     }
 
+    public CollectionValidatorNode( SimpleValidator<T> validator )
+    {
+        this.validator = validator;
+    }
+
+    // TODO need to add the other methods in to add children like I have them on
+    // the ValidatorNode
+    // I wanted to wait and see if this will subclass the ValidatorNode or if
+    // they both implement the same interface
+    // TODO without the hack of passing in the class Java cannot infer the type
+    public static <T> CollectionValidatorNode<T> each( Class<T> klass )
+    {
+        return new CollectionValidatorNode<>( input -> Optional.empty() );
+    }
+
     @Override
     public Validator<Collection<? extends T>> get()
     {
