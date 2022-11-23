@@ -25,9 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.idea2;
+package org.hisp.dhis.tracker.validation.exploration.idea3;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -78,6 +79,22 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     public static <T> ValidatorNode<T> validate( SimpleValidator<T> validator )
     {
         return new ValidatorNode<>( validator );
+    }
+
+    public static <T, S> ValidatorNode<T> each( Function<T, Collection<? extends S>> map, SimpleValidator<S> validator )
+    {
+        return new ValidatorNode<>( ( bundle, input ) -> {
+
+            // S mappedInput = map.apply( input );
+            // if ( validator.test( mappedInput ) )
+            // {
+            // return Optional.empty();
+            // }
+            //
+            // return Optional.of( error.apply(
+            // bundle.getPreheat().getIdSchemes(), mappedInput ) );
+            return null;
+        } );
     }
 
     public static <T, S> ValidatorNode<T> validate( Function<T, S> map, Predicate<S> validator,
@@ -194,6 +211,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         // though.
         // right now we dont return a tree of errors. which is what I originally
         // wanted.
+
         Optional<Error> optionalError = root.validator.apply( bundle, input );
         consumer.accept( optionalError );
 
@@ -219,7 +237,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         return validator;
     }
 
-    public Node<Optional<Error>> apply( TrackerBundle bundle, T input )
+    public ErrorNode apply( TrackerBundle bundle, T input )
     {
         ErrorNode result = new ErrorNode();
 
