@@ -28,9 +28,9 @@
 package org.hisp.dhis.tracker.validation.exploration.idea3;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -39,18 +39,11 @@ import java.util.function.Predicate;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
-// TODO generalize this; to get to my idea of the tree.
-// If some nodes func are only transformations than the children need to match the return type R of the func of their
-// parent.
-// if the node itself
-
-// TODO if the Validator interface would be generic on its return type then this could also implement it
-// not sure what interesting capabilities we would get from it :)
 public class ValidatorNode<T> implements Node<Validator<T>>
 {
-    // TODO this is what I had initially. BiFunction<TrackerBundle, T,
-    // Optional<Error>> would work
-    // private final Function<T, Optional<Error>> func;
+
+    private final boolean root = false;
+
     private final Validator<T> validator;
 
     private final List<ValidatorNode<T>> children = new ArrayList<>();
@@ -70,8 +63,8 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         this.validator = validator;
     }
 
-    // TODO this does not work without casting hell. Try again if it works now
-    public static <T> ValidatorNode<T> validate()
+    // TODO without the hack of passing in the class Java cannot infer the type
+    public static <T> ValidatorNode<T> validate( Class<T> klass )
     {
         return new ValidatorNode<>( input -> Optional.empty() );
     }
@@ -79,22 +72,6 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     public static <T> ValidatorNode<T> validate( SimpleValidator<T> validator )
     {
         return new ValidatorNode<>( validator );
-    }
-
-    public static <T, S> ValidatorNode<T> each( Function<T, Collection<? extends S>> map, SimpleValidator<S> validator )
-    {
-        return new ValidatorNode<>( ( bundle, input ) -> {
-
-            // S mappedInput = map.apply( input );
-            // if ( validator.test( mappedInput ) )
-            // {
-            // return Optional.empty();
-            // }
-            //
-            // return Optional.of( error.apply(
-            // bundle.getPreheat().getIdSchemes(), mappedInput ) );
-            return null;
-        } );
     }
 
     public static <T, S> ValidatorNode<T> validate( Function<T, S> map, Predicate<S> validator,
@@ -181,54 +158,14 @@ public class ValidatorNode<T> implements Node<Validator<T>>
      * @param after predicate which should hold true otherwise an error is
      *        returned
      * @param error
-     * @return
      * @param <S> type on which the predicate will be evaluated
+     * @return
      */
     public <S> ValidatorNode<T> andThen( Function<T, S> map, Predicate<S> after,
         BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
         this.children.add( validate( map, after, error ) );
         return this;
-    }
-
-    public void visit( TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
-    {
-        visit( this, bundle, input, consumer );
-    }
-
-    // TODO is this map or rather visit? I think for map it needs to take a
-    // Function<T, S> so be more generic
-    public void visit( ValidatorNode<T> root, TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
-    {
-        if ( root == null )
-        {
-            return;
-        }
-
-        // TODO if the edge would have a transformation like getNotes
-        // we could implement an each() that would then apply the input to each
-        // and add children; the consumer would need to be something different
-        // though.
-        // right now we dont return a tree of errors. which is what I originally
-        // wanted.
-
-        Optional<Error> optionalError = root.validator.apply( bundle, input );
-        consumer.accept( optionalError );
-
-        // TODO there might be value in visiting all nodes or only the behavior
-        // of valid roots children
-        // lets make it work for the default
-
-        // only visit children of valid parents
-        if ( optionalError.isPresent() )
-        {
-            return;
-        }
-
-        for ( ValidatorNode<T> child : root.children )
-        {
-            visit( child, bundle, input, consumer );
-        }
     }
 
     @Override
@@ -239,11 +176,97 @@ public class ValidatorNode<T> implements Node<Validator<T>>
 
     public ErrorNode apply( TrackerBundle bundle, T input )
     {
-        ErrorNode result = new ErrorNode();
+        return this.apply( this, bundle, input );
+    }
 
-        this.visit( this, bundle, input, opt -> result.add( new ErrorNode( opt ) ) );
+    private ErrorNode apply( ValidatorNode<T> root, TrackerBundle bundle, T input )
+    {
+
+        ErrorNode result = null;
+        ValidatorNode<T> current;
+        Stack<ValidatorNode<T>> stack = new Stack<>();
+        stack.push( root );
+
+        while ( !stack.empty() )
+        {
+            current = stack.pop();
+
+            Optional<Error> optionalError = current.validator.apply( bundle, input );
+            if ( result == null )
+            {
+                result = new ErrorNode( optionalError );
+            }
+            else
+            {
+                result.add( new ErrorNode( optionalError ) );
+            }
+
+            // only visit children of valid parents
+            if ( optionalError.isPresent() )
+            {
+                continue;
+            }
+
+            for ( ValidatorNode<T> child : current.children )
+            {
+                stack.push( child );
+            }
+        }
 
         return result;
+    }
+
+    public void apply( TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
+    {
+        traverseDepthFirst( this, node -> {
+            Optional<Error> optionalError = node.get().apply( bundle, input );
+            consumer.accept( optionalError );
+
+            // TODO there might be value in visiting all nodes or only the
+            // behavior
+            // of valid roots children
+            // lets make it work for the default
+
+            // only visit children of valid parents
+            if ( optionalError.isPresent() )
+            {
+                return false;
+            }
+
+            return true;
+        } );
+    }
+
+    /**
+     * Traverse the node in depth-first order. Nodes are passed to the visit
+     * function. Children will not be visited if visit returns false.
+     *
+     * @param root traverse node and its children
+     * @param visit called with the current node, skip visiting children on
+     *        false
+     */
+    public void traverseDepthFirst( ValidatorNode<T> root, Function<ValidatorNode<T>, Boolean> visit )
+    {
+
+        ValidatorNode<T> current;
+        Stack<ValidatorNode<T>> stack = new Stack<>();
+        stack.push( root );
+
+        while ( !stack.empty() )
+        {
+            current = stack.pop();
+
+            if ( Boolean.FALSE.equals( visit.apply( current ) ) )
+            {
+                // skip visiting children
+                continue;
+            }
+
+            for ( ValidatorNode<T> child : current.children )
+            {
+                stack.push( child );
+            }
+        }
     }
 
     // TODO this is just a helper for testing right now. Not sure yet how this
@@ -252,7 +275,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
     public List<Error> validate( TrackerBundle bundle, T input )
     {
         List<Error> errs = new ArrayList<>();
-        this.visit( bundle, input, o -> o.ifPresent( errs::add ) );
+        this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
         return errs;
     }
 

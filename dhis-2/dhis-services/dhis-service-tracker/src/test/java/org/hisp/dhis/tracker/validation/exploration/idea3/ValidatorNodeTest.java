@@ -31,7 +31,6 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1000;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1080;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E9999;
-import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.each;
 import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.validate;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -81,11 +80,12 @@ class ValidatorNodeTest
     void testIndependentValidators()
     {
 
-        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        ValidatorNode<Enrollment> root = validate( Enrollment.class )
             .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
         ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+
         assertEquals( 2, errNodes.getChildren().size() );
         for ( ErrorNode node : errNodes.getChildren() )
         {
@@ -93,8 +93,7 @@ class ValidatorNodeTest
         }
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.visit( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
-
+        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
         assertContainsOnly( List.of( E1048, E1000 ), errs );
     }
 
@@ -111,7 +110,7 @@ class ValidatorNodeTest
         Node<Optional<Error>> result = root.apply( bundle, new Enrollment() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.visit( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
 
         assertContainsOnly( List.of( E1048, E1080 ), errs );
     }
@@ -132,11 +131,11 @@ class ValidatorNodeTest
             return Optional.of( error( E1000 ) );
         } ).collect( Collectors.toList() );
 
-        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
-            .andThen( each( Enrollment::getNotes, n -> {
-                System.out.println( n );
-                return Optional.of( error( E1000 ) );
-            } ) );
+        // ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        // .andThen( each( Enrollment::getNotes, n -> {
+        // System.out.println( n );
+        // return Optional.of( error( E1000 ) );
+        // } ) );
 
         // List<TrackerErrorCode> errs = new ArrayList<>();
         // root.visit( bundle, new Enrollment(), o -> o.ifPresent( e ->
