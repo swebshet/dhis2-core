@@ -31,7 +31,7 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1025;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1122;
 import static org.hisp.dhis.tracker.validation.exploration.idea3.Error.error;
-import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.validate;
+import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorTree.validate;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -53,9 +53,9 @@ import org.hisp.dhis.tracker.domain.Note;
  */
 public class EnrollmentValidator
 {
-    public static ValidatorNode<Enrollment> uidProperties()
+    public static ValidatorTree<Enrollment> uidProperties()
     {
-        return new ValidatorNode<Enrollment>()
+        return new ValidatorTree<Enrollment>()
             .andThen( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
         // TODO I have an idea of how to make this work
         // It might be best though to first think about how invalid notes could
@@ -66,11 +66,11 @@ public class EnrollmentValidator
         // PreCheckUidValidationHook
     }
 
-    public static ValidatorNode<Note> notes()
+    public static ValidatorTree<Note> notes()
     {
         // TODO attach to the enrollmentValidator() once I get the
         // CollectionValidator working
-        return new ValidatorNode<Note>();
+        return new ValidatorTree<Note>();
         // .validateEach( Enrollment::getNotes, Note::getNote,
         // CodeGenerator::isValidUid, error( E1048 ) ); //
         // PreCheckUidValidationHook
@@ -78,11 +78,11 @@ public class EnrollmentValidator
 
     }
 
-    public static ValidatorNode<Enrollment> enrollmentValidator()
+    public static ValidatorTree<Enrollment> enrollmentValidator()
     {
         // TODO create a tree of validations; right now they are mostly run
         // independently
-        return new ValidatorNode<Enrollment>()
+        return new ValidatorTree<Enrollment>()
             .andThen( uidProperties() )
             .andThen( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen(

@@ -41,10 +41,10 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 public interface SimpleValidator<T> extends Validator<T>
 {
 
-    Optional<Error> apply( T input );
+    Optional<Error> test( T input );
 
-    default Optional<Error> apply( TrackerBundle bundle, T input )
+    default Optional<Error> test( TrackerBundle bundle, T input )
     {
-        return apply( input );
+        return test( input );
     }
 }

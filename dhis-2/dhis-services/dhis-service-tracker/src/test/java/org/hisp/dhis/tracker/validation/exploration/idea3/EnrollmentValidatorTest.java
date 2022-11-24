@@ -67,7 +67,7 @@ class EnrollmentValidatorTest
 
     private TrackerIdSchemeParams idSchemes;
 
-    private ValidatorNode<Enrollment> validator;
+    private ValidatorTree<Enrollment> validator;
 
     @BeforeEach
     void setUp()
@@ -95,7 +95,7 @@ class EnrollmentValidatorTest
 
         Enrollment enrollment = enrollment();
 
-        List<Error> validation = validator.validate( bundle, enrollment );
+        List<Error> validation = validator.test( bundle, enrollment );
 
         assertIsEmpty( validation );
     }
@@ -116,7 +116,7 @@ class EnrollmentValidatorTest
             note( "invalid1", "note 1 with invalid uid" ),
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
-        List<Error> validation = validator.validate( bundle, enrollment );
+        List<Error> validation = validator.test( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );
@@ -132,7 +132,7 @@ class EnrollmentValidatorTest
         // validation error E1069: will not trigger as there is not even a
         // program to check in the preheat
 
-        List<Error> validation = validator.validate( bundle, enrollment );
+        List<Error> validation = validator.test( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );
@@ -146,7 +146,7 @@ class EnrollmentValidatorTest
         // validation error E1069: program not found
         enrollment.setProgram( uid() );
 
-        List<Error> validation = validator.validate( bundle, enrollment );
+        List<Error> validation = validator.test( bundle, enrollment );
 
         assertFalse( validation.isEmpty() );
         List<TrackerErrorCode> errors = validation.stream().map( Error::getCode ).collect( Collectors.toList() );

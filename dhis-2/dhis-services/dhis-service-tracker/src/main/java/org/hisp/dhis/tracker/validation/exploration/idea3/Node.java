@@ -27,14 +27,16 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea3;
 
-// TODO is this even useful?
+import java.util.List;
+
 public interface Node<T>
 {
 
     T get();
 
-    // List<Node<T>> getChildren();
+    // TODO PECS so which one is it :) List<? super Node<T>> getChildren();
+    List<? extends Node<T>> getChildren();
 
-    // Node<Optional<Error>> apply(TrackerBundle bundle, T input );
-    // traversal? map? visit?
+    // TODO implement a default collect? I often want to collect to List
+    // or a more generic visit
 }

@@ -31,7 +31,7 @@ import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1000;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1048;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E1080;
 import static org.hisp.dhis.tracker.report.TrackerErrorCode.E9999;
-import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorNode.validate;
+import static org.hisp.dhis.tracker.validation.exploration.idea3.ValidatorTree.validate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -39,7 +39,6 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
@@ -50,7 +49,7 @@ import org.hisp.dhis.tracker.report.TrackerErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ValidatorNodeTest
+class ValidatorTreeTest
 {
 
     private TrackerPreheat preheat;
@@ -78,11 +77,11 @@ class ValidatorNodeTest
     void testIndependentValidators()
     {
 
-        ValidatorNode<Enrollment> root = validate( Enrollment.class )
+        ValidatorTree<Enrollment> root = validate( Enrollment.class )
             .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
-        ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+        Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
         assertEquals( 2, errNodes.getChildren().size() );
 
@@ -95,13 +94,13 @@ class ValidatorNodeTest
     void testDependentValidatorsWillNotApplyToChildIfParentErrors()
     {
 
-        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
             .andThen(
                 validate( (SimpleValidator<Enrollment>) e1 -> Optional.of( error( E1048 ) ) )
                     .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
-        ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+        Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
         assertEquals( 2, errNodes.getChildren().size() );
 
@@ -114,12 +113,12 @@ class ValidatorNodeTest
     void testDependentValidatorsAppliesToChildIfParentPasses()
     {
 
-        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
             .andThen( validate( (SimpleValidator<Enrollment>) e1 -> Optional.empty() )
                 .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
             .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
-        ErrorNode errNodes = root.apply( bundle, new Enrollment() );
+        Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
         // the parent of E9999 is an empty ErrorNode
         assertEquals( 3, errNodes.getChildren().size() );
@@ -139,7 +138,7 @@ class ValidatorNodeTest
         CollectionValidatorNode<Note> root = new CollectionValidatorNode<>(
             ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
 
-        ErrorNode errNodes = root.apply( bundle, notes );
+        Node<Optional<Error>> errNodes = root.apply( bundle, notes );
 
         assertEquals( 2, errNodes.getChildren().size() );
         List<TrackerErrorCode> errs = new ArrayList<>();
@@ -147,7 +146,7 @@ class ValidatorNodeTest
         assertEquals( List.of( E1000, E1000 ), errs );
     }
 
-    // TODO how to connect the CollectionValidatorNode with the ValidatorNode?
+    // TODO how to connect the CollectionValidatorNode with the ValidatorTree?
     @Test
     void testConnectingCollectionValidatorWithValidatorNode()
     {
@@ -158,15 +157,14 @@ class ValidatorNodeTest
             note( "olfXZzSGacW", "note 2" ) );
         enrollment.setNotes( notes );
 
-        // T -> Collection<S>
-        Function<Enrollment, List<Note>> getNotes = Enrollment::getNotes;
-        // Validator<S>
-
         CollectionValidatorNode<Note> noteValidator = new CollectionValidatorNode<>(
-            ( __, n ) -> Optional.of( error( E1000, n.getNote() ) ) );
+            ( __, n ) -> {
+                return Optional.of( error( E1000, n.getNote() ) );
+            } );
 
-        // TODO I need to rely on an interface now
-        ValidatorNode<Enrollment> root = new ValidatorNode<Enrollment>()
+        // T -> Collection<S>
+        // Validator<S>
+        ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
             .andThen( Enrollment::getNotes, noteValidator );
 
         // .andThen( each( Enrollment::getNotes, n -> {

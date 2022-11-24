@@ -43,7 +43,7 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
  *
  * @param <T> type of entity to be validated
  */
-public class CollectionValidatorNode<T> implements Node<Validator<Collection<? extends T>>>
+public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? extends T>>
 {
 
     private final Validator<T> validator;
@@ -61,8 +61,8 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
     }
 
     // TODO need to add the other methods in to add children like I have them on
-    // the ValidatorNode
-    // I wanted to wait and see if this will subclass the ValidatorNode or if
+    // the ValidatorTree
+    // I wanted to wait and see if this will subclass the ValidatorTree or if
     // they both implement the same interface
     // TODO without the hack of passing in the class Java cannot infer the type
     public static <T> CollectionValidatorNode<T> each( Class<T> klass )
@@ -71,19 +71,13 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
     }
 
     @Override
-    public Validator<Collection<? extends T>> get()
-    {
-        // TODO not sure how to satisfy this
-        // TODO clean up the interface business. So far I think its not needed
-        return null;
-    }
-
-    public ErrorNode apply( TrackerBundle bundle, Collection<? extends T> input )
+    public Node<Optional<Error>> apply( TrackerBundle bundle, Collection<? extends T> input )
     {
         return this.apply( this, bundle, input );
     }
 
-    public ErrorNode apply( CollectionValidatorNode<T> root, TrackerBundle bundle, Collection<? extends T> input )
+    public Node<Optional<Error>> apply( CollectionValidatorNode<T> root, TrackerBundle bundle,
+        Collection<? extends T> input )
     {
         ErrorNode result = null;
         CollectionValidatorNode<T> current;
@@ -107,7 +101,7 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
             boolean skipChildren = false;
             for ( T in : input )
             {
-                Optional<Error> error = root.validator.apply( bundle, in );
+                Optional<Error> error = root.validator.test( bundle, in );
                 if ( error.isPresent() )
                 {
                     skipChildren = true;
@@ -135,7 +129,7 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
             boolean skipChildren = false;
             for ( T in : input )
             {
-                Optional<Error> error = validator.apply( bundle, in );
+                Optional<Error> error = validator.test( bundle, in );
                 if ( error.isPresent() )
                 {
                     skipChildren = true;
@@ -183,10 +177,23 @@ public class CollectionValidatorNode<T> implements Node<Validator<Collection<? e
     // TODO this is just a helper for testing right now. Not sure yet how this
     // should look like
     // also since this is likely where fail fast will come into play as well
-    public List<Error> validate( TrackerBundle bundle, Collection<? extends T> input )
+    public List<Error> test( TrackerBundle bundle, Collection<? extends T> input )
     {
         List<Error> errs = new ArrayList<>();
         this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
         return errs;
+    }
+
+    @Override
+    public Validator<Collection<? extends T>> get()
+    {
+        // TODO not sure how to satisfy this :(
+        return null;
+    }
+
+    @Override
+    public List<? extends Node<Validator<Collection<? extends T>>>> getChildren()
+    {
+        return children;
     }
 }

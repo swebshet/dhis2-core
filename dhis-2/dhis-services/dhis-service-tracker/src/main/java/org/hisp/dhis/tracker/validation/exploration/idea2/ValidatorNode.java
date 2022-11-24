@@ -121,7 +121,7 @@ public class ValidatorNode<T> implements Node<Validator<T>>
         return this;
     }
 
-    // TODO I could add an andThen(Function<T,S> map, ValidatorNode<S> after)
+    // TODO I could add an andThen(Function<T,S> map, ValidatorTree<S> after)
     // where map is applied to the node and its children
 
     /**

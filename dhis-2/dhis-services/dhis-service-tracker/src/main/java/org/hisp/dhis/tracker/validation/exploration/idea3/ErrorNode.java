@@ -62,8 +62,10 @@ public class ErrorNode implements Node<Optional<Error>>
         return err;
     }
 
-    public List<ErrorNode> getChildren()
+    @Override
+    public List<? extends Node<Optional<Error>>> getChildren()
     {
         return children;
     }
+
 }

@@ -40,5 +40,5 @@ public interface Validator<T>
     // read-only and much narrower than the bundle or even the preheat. The
     // bundle contains the entire payload so this can dilute the narrow
     // interface defined here again.
-    Optional<Error> apply( TrackerBundle bundle, T input );
+    Optional<Error> test( TrackerBundle bundle, T input );
 }

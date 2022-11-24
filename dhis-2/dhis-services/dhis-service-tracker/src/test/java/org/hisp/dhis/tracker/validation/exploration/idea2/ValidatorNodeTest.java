@@ -127,10 +127,10 @@ class ValidatorNodeTest
         // so client code is more similar to IDEA1
 
         // TODO work on a root later, lets get a simple validation going
-        // ValidatorNode<Enrollment> root = node() // acts as a ValidatorNode
+        // ValidatorTree<Enrollment> root = node() // acts as a ValidatorTree
         // with Function.identity()
         // .validate();
-        // ValidatorNode<Enrollment> root = node(validator);
+        // ValidatorTree<Enrollment> root = node(validator);
 
         // Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 )
         Function<Boolean, Optional<Error>> predicateToError = b -> {
