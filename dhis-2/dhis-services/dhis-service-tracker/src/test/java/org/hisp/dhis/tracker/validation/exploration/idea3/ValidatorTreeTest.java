@@ -78,8 +78,8 @@ class ValidatorTreeTest
     {
 
         ValidatorTree<Enrollment> root = validate( Enrollment.class )
-            .and( validate( e -> Optional.of( error( E1048 ) ) ) )
-            .and( validate( e -> Optional.of( error( E1000 ) ) ) );
+            .andThen( validate( e -> Optional.of( error( E1048 ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1000 ) ) ) );
 
         Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
@@ -95,10 +95,10 @@ class ValidatorTreeTest
     {
 
         ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
-            .and(
+            .andThen(
                 validate( (SimpleValidator<Enrollment>) e1 -> Optional.of( error( E1048 ) ) )
-                    .and( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
-            .and( validate( e -> Optional.of( error( E1080 ) ) ) );
+                    .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
@@ -114,9 +114,9 @@ class ValidatorTreeTest
     {
 
         ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
-            .and( validate( (SimpleValidator<Enrollment>) e1 -> Optional.empty() )
-                .and( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
-            .and( validate( e -> Optional.of( error( E1080 ) ) ) );
+            .andThen( validate( (SimpleValidator<Enrollment>) e1 -> Optional.empty() )
+                .andThen( validate( e2 -> Optional.of( error( E9999 ) ) ) ) )
+            .andThen( validate( e -> Optional.of( error( E1080 ) ) ) );
 
         Node<Optional<Error>> errNodes = root.apply( bundle, new Enrollment() );
 
@@ -165,7 +165,7 @@ class ValidatorTreeTest
         // T -> Collection<S>
         // Validator<S>
         ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
-            .and( Enrollment::getNotes, noteValidator );
+            .andThen( Enrollment::getNotes, noteValidator );
 
         // .andThen( each( Enrollment::getNotes, n -> {
         // System.out.println( n );
