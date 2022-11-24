@@ -56,7 +56,7 @@ public class EnrollmentValidator
     public static ValidatorTree<Enrollment> uidProperties()
     {
         return new ValidatorTree<Enrollment>()
-            .andThen( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
+            .and( Enrollment::getEnrollment, CodeGenerator::isValidUid, error( E1048 ) ); // PreCheckUidValidationHook
         // TODO I have an idea of how to make this work
         // It might be best though to first think about how invalid notes could
         // be tagged/collected at the end of the validation
@@ -83,14 +83,14 @@ public class EnrollmentValidator
         // TODO create a tree of validations; right now they are mostly run
         // independently
         return new ValidatorTree<Enrollment>()
-            .andThen( uidProperties() )
-            .andThen( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
-            .andThen(
+            .and( uidProperties() )
+            .and( e -> e.getOrgUnit().isNotBlank(), error( E1122, "orgUnit" ) ) // PreCheckMandatoryFieldsValidationHook
+            .and(
                 validate( Enrollment::getProgram, CommonValidations::notBlank, error( E1122, "program" ) )
-                    .andThen( Enrollment::getProgram, CommonValidations::programInPreheat ) )// PreCheckMandatoryFieldsValidationHook
-                                                                                             // andThen
-                                                                                             // PreCheckMetaValidationHook
-            .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
-            .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
+                    .and( Enrollment::getProgram, CommonValidations::programInPreheat ) )// PreCheckMandatoryFieldsValidationHook
+                                                                                         // andThen
+                                                                                         // PreCheckMetaValidationHook
+            .and( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
+            .and( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
     }
 }

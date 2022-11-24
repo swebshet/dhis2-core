@@ -129,7 +129,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public ValidatorTree<T> andThen( Validator<T> after )
+    public ValidatorTree<T> and( Validator<T> after )
     {
         this.children.add( new ValidatorTree<>( after ) );
         return this;
@@ -141,7 +141,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public <S> ValidatorTree<T> andThen( Function<T, S> map, Validator<S> after )
+    public <S> ValidatorTree<T> and( Function<T, S> map, Validator<S> after )
     {
         this.children.add( new ValidatorTree<>(
             ( bundle, input ) -> after.test( bundle, map.apply( input ) ) ) );
@@ -154,7 +154,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public <S> ValidatorTree<T> andThen( Function<T, S> map, ValidatorNode<S> after )
+    public <S> ValidatorTree<T> and( Function<T, S> map, ValidatorNode<S> after )
     {
         // TODO can this even work?
         this.children.add( new ValidatorTree<>(
@@ -168,13 +168,13 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public ValidatorTree<T> andThen( ValidatorNode<T> after )
+    public ValidatorTree<T> and( ValidatorNode<T> after )
     {
         this.children.add( after );
         return this;
     }
 
-    public ValidatorTree<T> andThen( Predicate<T> after, BiFunction<TrackerIdSchemeParams, T, Error> error )
+    public ValidatorTree<T> and( Predicate<T> after, BiFunction<TrackerIdSchemeParams, T, Error> error )
     {
         this.children.add( validate( after, error ) );
         return this;
@@ -192,7 +192,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param <S> type on which the predicate will be evaluated
      * @return
      */
-    public <S> ValidatorTree<T> andThen( Function<T, S> map, Predicate<S> after,
+    public <S> ValidatorTree<T> and( Function<T, S> map, Predicate<S> after,
         BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
         this.children.add( validate( map, after, error ) );
