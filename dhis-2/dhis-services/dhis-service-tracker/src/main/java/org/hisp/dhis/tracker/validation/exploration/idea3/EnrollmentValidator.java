@@ -92,5 +92,6 @@ public class EnrollmentValidator
             // PreCheckMetaValidationHook
             .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, error( E1122, "trackedEntity" ) ) // PreCheckMandatoryFieldsValidationHook
             .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025, "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
+        // .andThen(Enrollment::getNotes, each(Node.class) );
     }
 }

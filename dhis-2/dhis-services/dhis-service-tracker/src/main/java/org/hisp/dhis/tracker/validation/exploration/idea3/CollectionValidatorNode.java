@@ -32,8 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
@@ -45,7 +43,7 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
  */
 public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? extends T>>
 {
-    private ValidatorNode<T> parent;
+    private ValidatorNode<Collection<? extends T>> parent;
 
     private final Validator<T, Optional<Error>> validator;
 
@@ -128,67 +126,74 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
         return result;
     }
 
-    public void apply( TrackerBundle bundle, Collection<? extends T> input, Consumer<ErrorNode> consumer )
-    {
-        traverseDepthFirst( this, validator -> {
-            boolean skipChildren = false;
-            for ( T in : input )
-            {
-                ErrorNode error = validator.apply( bundle, in );
-                if ( error.hasError() )
-                {
-                    skipChildren = true;
-                }
-                consumer.accept( error );
-            }
-
-            // only visit children of valid parents
-            return !skipChildren;
-        } );
-    }
-
-    /**
-     * Traverse the node in depth-first order. Validators are passed to the
-     * visit function. Children will not be visited if visit returns false.
-     *
-     * @param root traverse node and its children
-     * @param visit called with the current validator, skip visiting children on
-     *        false
-     */
-    public void traverseDepthFirst( ValidatorNode<Collection<? extends T>> root,
-        Function<Validator<T, ErrorNode>, Boolean> visit )
-    {
-
-        Node<Validator<Collection<? extends T>, ErrorNode>> current;
-        Stack<Node<Validator<Collection<? extends T>, ErrorNode>>> stack = new Stack<>();
-        stack.push( root );
-
-        while ( !stack.empty() )
-        {
-            current = stack.pop();
-
-            if ( Boolean.FALSE.equals( visit.apply( current.get() ) ) )
-            {
-                // skip visiting children
-                continue;
-            }
-
-            for ( Node<Validator<Collection<? extends T>, ErrorNode>> child : current.getChildren() )
-            {
-                stack.push( child );
-            }
-        }
-    }
-
-    // TODO this is just a helper for testing right now. Not sure yet how this
-    // should look like
-    // also since this is likely where fail fast will come into play as well
-    public Optional<Error> test( TrackerBundle bundle, Collection<? extends T> input )
-    {
-        List<Error> errs = new ArrayList<>();
-        // this.apply( bundle, input, o -> errs::add );
-        return Optional.empty();
-    }
+    // public void apply( TrackerBundle bundle, Collection<? extends T> input,
+    // Consumer<ErrorNode> consumer )
+    // {
+    // traverseDepthFirst( this, validator -> {
+    // boolean skipChildren = false;
+    // for ( T in : input )
+    // {
+    // ErrorNode error = validator.apply( bundle, in );
+    // if ( error.hasError() )
+    // {
+    // skipChildren = true;
+    // }
+    // consumer.accept( error );
+    // }
+    //
+    // // only visit children of valid parents
+    // return !skipChildren;
+    // } );
+    // }
+    //
+    // /**
+    // * Traverse the node in depth-first order. Validators are passed to the
+    // * visit function. Children will not be visited if visit returns false.
+    // *
+    // * @param root traverse node and its children
+    // * @param visit called with the current validator, skip visiting children
+    // on
+    // * false
+    // */
+    // public void traverseDepthFirst( ValidatorNode<Collection<? extends T>>
+    // root,
+    // Function<Validator<T, ErrorNode>, Boolean> visit )
+    // {
+    //
+    // Node<Validator<Collection<? extends T>, ErrorNode>> current;
+    // Stack<Node<Validator<Collection<? extends T>, ErrorNode>>> stack = new
+    // Stack<>();
+    // stack.push( root );
+    //
+    // while ( !stack.empty() )
+    // {
+    // current = stack.pop();
+    //
+    // if ( Boolean.FALSE.equals( visit.apply( current.get() ) ) )
+    // {
+    // // skip visiting children
+    // continue;
+    // }
+    //
+    // for ( Node<Validator<Collection<? extends T>, ErrorNode>> child :
+    // current.getChildren() )
+    // {
+    // stack.push( child );
+    // }
+    // }
+    // }
+    //
+    // // TODO this is just a helper for testing right now. Not sure yet how
+    // this
+    // // should look like
+    // // also since this is likely where fail fast will come into play as well
+    // public Optional<Error> test( TrackerBundle bundle, Collection<? extends
+    // T> input )
+    // {
+    // List<Error> errs = new ArrayList<>();
+    // // this.apply( bundle, input, o -> errs::add );
+    // return Optional.empty();
+    // }
 
     @Override
     public void setParent( ValidatorNode<Collection<? extends T>> parent )

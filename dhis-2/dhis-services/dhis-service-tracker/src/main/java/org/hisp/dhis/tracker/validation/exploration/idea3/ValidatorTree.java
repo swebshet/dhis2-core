@@ -264,6 +264,8 @@ public class ValidatorTree<T> implements ValidatorNode<T>
         {
             current = stack.pop();
 
+            // TODO should I just exclude calls to a root validator?
+            //
             ErrorNode error = current.get().apply( bundle, input );
 
             // TODO this is to accommodate the root Validator which should end

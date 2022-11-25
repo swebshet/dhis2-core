@@ -86,7 +86,9 @@ class ValidatorTreeTest
         assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        // TODO fix
+        // root.apply( bundle, new Enrollment(), o -> o.ifPresent( e ->
+        // errs.add( e.getCode() ) ) );
         assertEquals( List.of( E1000, E1048 ), errs );
     }
 
@@ -105,7 +107,9 @@ class ValidatorTreeTest
         assertEquals( 2, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        // TODO fix
+        // root.apply( bundle, new Enrollment(), o -> o.ifPresent( e ->
+        // errs.add( e.getCode() ) ) );
         assertEquals( List.of( E1080, E1048 ), errs );
     }
 
@@ -124,7 +128,9 @@ class ValidatorTreeTest
         assertEquals( 3, errNodes.getChildren().size() );
 
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.apply( bundle, new Enrollment(), o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        // TODO fix
+        // root.apply( bundle, new Enrollment(), o -> o.ifPresent( e ->
+        // errs.add( e.getCode() ) ) );
         assertEquals( List.of( E1080, E9999 ), errs );
     }
 
@@ -142,7 +148,9 @@ class ValidatorTreeTest
 
         assertEquals( 2, errNodes.getChildren().size() );
         List<TrackerErrorCode> errs = new ArrayList<>();
-        root.apply( bundle, notes, o -> o.ifPresent( e -> errs.add( e.getCode() ) ) );
+        // TODO fix
+        // root.apply( bundle, notes, o -> o.ifPresent( e -> errs.add(
+        // e.getCode() ) ) );
         assertEquals( List.of( E1000, E1000 ), errs );
     }
 
@@ -166,8 +174,9 @@ class ValidatorTreeTest
         // T -> Collection<S>
         // Validator<S>
 
-        // ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
-        // .andThen( Enrollment::getNotes, noteValidator );
+        ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
+            .andThen( Enrollment::getNotes, noteValidator );
+        ErrorNode errs = root.apply( bundle, enrollment );
 
         // .andThen( each( Enrollment::getNotes, n -> {
         // System.out.println( n );

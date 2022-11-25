@@ -43,10 +43,10 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
  * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
  * itself.
  */
-class DuplicateNotesValidator implements Validator<Note>
+class DuplicateNotesValidator implements Validator<Note, Optional<Error>>
 {
 
-    public static Validator<Note> noDuplicateNotes()
+    public static Validator<Note, Optional<Error>> noDuplicateNotes()
     {
         return new DuplicateNotesValidator();
     }
