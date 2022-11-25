@@ -27,14 +27,14 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea3;
 
-import java.util.Optional;
-
-import org.hisp.dhis.tracker.bundle.TrackerBundle;
-
-public interface ValidatorNode<T> extends Node<Validator<T>>
+public interface ValidatorNode<T> extends Node<Validator<T, ErrorNode>>, Validator<T, ErrorNode>
 {
+    // public interface ValidatorNode<T> extends Node<Validator<T,
+    // Node<Optional<Error>>>>, Validator<T, Node<Optional<Error>>> {
 
-    // TODO naming conflicts with the Validator interface itself
-    // I want a ValidatorNode to also be a Validator
-    Node<Optional<Error>> apply( TrackerBundle bundle, T input );
+    // TODO feels like a hack but I need a way to attach an existing node to
+    // another node
+    // it might just be a matter of finding a different way of building the tree
+    // which would make this obsolete
+    void setParent( ValidatorNode<T> parent );
 }

@@ -45,18 +45,23 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
  */
 public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? extends T>>
 {
+    private ValidatorNode<T> parent;
 
-    private final Validator<T> validator;
+    private final Validator<T, Optional<Error>> validator;
 
     private final List<CollectionValidatorNode<T>> children = new ArrayList<>();
 
-    public CollectionValidatorNode( Validator<T> validator )
+    // TODO this should accept an interface like the SimpleValidator which has
+    // the Optional<Error> return built in
+    public CollectionValidatorNode( Validator<T, Optional<Error>> validator )
     {
+        this.parent = null;
         this.validator = validator;
     }
 
     public CollectionValidatorNode( SimpleValidator<T> validator )
     {
+        this.parent = null;
         this.validator = validator;
     }
 
@@ -71,12 +76,12 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
     }
 
     @Override
-    public Node<Optional<Error>> apply( TrackerBundle bundle, Collection<? extends T> input )
+    public ErrorNode apply( TrackerBundle bundle, Collection<? extends T> input )
     {
         return this.apply( this, bundle, input );
     }
 
-    public Node<Optional<Error>> apply( CollectionValidatorNode<T> root, TrackerBundle bundle,
+    public ErrorNode apply( CollectionValidatorNode<T> root, TrackerBundle bundle,
         Collection<? extends T> input )
     {
         ErrorNode result = null;
@@ -101,12 +106,12 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
             boolean skipChildren = false;
             for ( T in : input )
             {
-                Optional<Error> error = root.validator.test( bundle, in );
+                Optional<Error> error = root.validator.apply( bundle, in );
                 if ( error.isPresent() )
                 {
                     skipChildren = true;
                 }
-                result.add( new ErrorNode( error ) );
+                result.add( error );
             }
 
             // only visit children of valid parents
@@ -123,14 +128,14 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
         return result;
     }
 
-    public void apply( TrackerBundle bundle, Collection<? extends T> input, Consumer<Optional<Error>> consumer )
+    public void apply( TrackerBundle bundle, Collection<? extends T> input, Consumer<ErrorNode> consumer )
     {
         traverseDepthFirst( this, validator -> {
             boolean skipChildren = false;
             for ( T in : input )
             {
-                Optional<Error> error = validator.test( bundle, in );
-                if ( error.isPresent() )
+                ErrorNode error = validator.apply( bundle, in );
+                if ( error.hasError() )
                 {
                     skipChildren = true;
                 }
@@ -150,24 +155,25 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
      * @param visit called with the current validator, skip visiting children on
      *        false
      */
-    public void traverseDepthFirst( CollectionValidatorNode<T> root, Function<Validator<T>, Boolean> visit )
+    public void traverseDepthFirst( ValidatorNode<Collection<? extends T>> root,
+        Function<Validator<T, ErrorNode>, Boolean> visit )
     {
 
-        CollectionValidatorNode<T> current;
-        Stack<CollectionValidatorNode<T>> stack = new Stack<>();
+        Node<Validator<Collection<? extends T>, ErrorNode>> current;
+        Stack<Node<Validator<Collection<? extends T>, ErrorNode>>> stack = new Stack<>();
         stack.push( root );
 
         while ( !stack.empty() )
         {
             current = stack.pop();
 
-            if ( Boolean.FALSE.equals( visit.apply( current.validator ) ) )
+            if ( Boolean.FALSE.equals( visit.apply( current.get() ) ) )
             {
                 // skip visiting children
                 continue;
             }
 
-            for ( CollectionValidatorNode<T> child : current.children )
+            for ( Node<Validator<Collection<? extends T>, ErrorNode>> child : current.getChildren() )
             {
                 stack.push( child );
             }
@@ -177,22 +183,27 @@ public class CollectionValidatorNode<T> implements ValidatorNode<Collection<? ex
     // TODO this is just a helper for testing right now. Not sure yet how this
     // should look like
     // also since this is likely where fail fast will come into play as well
-    public List<Error> test( TrackerBundle bundle, Collection<? extends T> input )
+    public Optional<Error> test( TrackerBundle bundle, Collection<? extends T> input )
     {
         List<Error> errs = new ArrayList<>();
-        this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
-        return errs;
+        // this.apply( bundle, input, o -> errs::add );
+        return Optional.empty();
     }
 
     @Override
-    public Validator<Collection<? extends T>> get()
+    public void setParent( ValidatorNode<Collection<? extends T>> parent )
     {
-        // TODO not sure how to satisfy this :(
-        return null;
+        this.parent = parent;
     }
 
     @Override
-    public List<? extends Node<Validator<Collection<? extends T>>>> getChildren()
+    public Validator<Collection<? extends T>, ErrorNode> get()
+    {
+        return this;
+    }
+
+    @Override
+    public List<? extends Node<Validator<Collection<? extends T>, ErrorNode>>> getChildren()
     {
         return children;
     }

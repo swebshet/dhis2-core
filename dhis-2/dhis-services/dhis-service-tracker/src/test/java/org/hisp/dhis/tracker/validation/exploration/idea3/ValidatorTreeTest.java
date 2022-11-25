@@ -159,13 +159,15 @@ class ValidatorTreeTest
 
         CollectionValidatorNode<Note> noteValidator = new CollectionValidatorNode<>(
             ( __, n ) -> {
-                return Optional.of( error( E1000, n.getNote() ) );
+                return Optional.of( new Error( null, n.getValue() ) );
             } );
+        // List<Error> errors = noteValidator.test(bundle, notes);
 
         // T -> Collection<S>
         // Validator<S>
-        ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
-            .andThen( Enrollment::getNotes, noteValidator );
+
+        // ValidatorTree<Enrollment> root = new ValidatorTree<Enrollment>()
+        // .andThen( Enrollment::getNotes, noteValidator );
 
         // .andThen( each( Enrollment::getNotes, n -> {
         // System.out.println( n );
@@ -176,7 +178,9 @@ class ValidatorTreeTest
         // root.visit( bundle, new Enrollment(), o -> o.ifPresent( e ->
         // errs.add( e.getCode() ) ) );
         //
-        // assertContainsOnly( List.of( E1048, E1000 ), errs );
+        // assertEquals( List.of( "note 1", "note 2" ),
+        // errors.stream().map(Error::getMessage).collect(Collectors.toList())
+        // );
     }
 
     private static Error error( TrackerErrorCode code )

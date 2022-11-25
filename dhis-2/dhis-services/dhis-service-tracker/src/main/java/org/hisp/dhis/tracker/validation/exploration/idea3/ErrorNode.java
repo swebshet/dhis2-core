@@ -34,26 +34,53 @@ import java.util.Optional;
 public class ErrorNode implements Node<Optional<Error>>
 {
 
+    private ErrorNode parent;
+
     private final Optional<Error> err;
 
     private final List<ErrorNode> children;
 
     public ErrorNode()
     {
+        this.parent = null;
         this.err = Optional.empty();
         this.children = new ArrayList<>();
     }
 
     public ErrorNode( Optional<Error> error )
     {
+        this( null, error );
+    }
+
+    public ErrorNode( ErrorNode parent, Optional<Error> error )
+    {
+        this.parent = parent;
         this.err = error;
         this.children = new ArrayList<>();
     }
 
-    public ErrorNode add( ErrorNode child )
+    public void setParent( ErrorNode parent )
     {
-        children.add( child );
+        this.parent = parent;
+    }
+
+    public ErrorNode add( Optional<Error> error )
+    {
+        children.add( new ErrorNode( this, error ) );
         return this;
+    }
+
+    public ErrorNode add( ErrorNode error )
+    {
+        error.setParent( this );
+        children.add( error );
+        return this;
+    }
+
+    // TODO implement: if it or any of its children has an error
+    public boolean hasError()
+    {
+        return true;
     }
 
     @Override

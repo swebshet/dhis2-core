@@ -52,7 +52,7 @@ class DuplicateNotesValidator implements Validator<Note>
     }
 
     @Override
-    public Optional<Error> test( TrackerBundle bundle, Note note )
+    public Optional<Error> apply( TrackerBundle bundle, Note note )
     {
         if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) ) // Ignore
                                                                        // notes

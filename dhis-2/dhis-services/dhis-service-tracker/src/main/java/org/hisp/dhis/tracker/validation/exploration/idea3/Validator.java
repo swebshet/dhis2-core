@@ -27,12 +27,13 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.idea3;
 
-import java.util.Optional;
-
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
+// TODO how can I constrain most validators to Optional<Error> ?
+// I would need another interface like the Simple one. What name should I use :joy:
+
 @FunctionalInterface
-public interface Validator<T>
+public interface Validator<T, U>
 {
 
     // TODO TrackerBundle can be interpreted as a kind of ValidationContext.
@@ -40,5 +41,5 @@ public interface Validator<T>
     // read-only and much narrower than the bundle or even the preheat. The
     // bundle contains the entire payload so this can dilute the narrow
     // interface defined here again.
-    Optional<Error> test( TrackerBundle bundle, T input );
+    U apply( TrackerBundle bundle, T input );
 }

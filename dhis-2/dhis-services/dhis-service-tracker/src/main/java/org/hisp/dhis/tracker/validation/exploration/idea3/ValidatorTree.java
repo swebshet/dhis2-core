@@ -39,56 +39,120 @@ import java.util.function.Predicate;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 
-// TODO I think a ValidatorTree could/maybe should actually be a Validator
-// issue is with the interface signatures as the return type is not part of the signature
-// there is a collision unless I rename one of them
-// Validator: Optional<Error> apply( TrackerBundle bundle, T input );
-// (Validator)Node: Node<Validator<<Error>> apply( TrackerBundle bundle, T input );
-//
-// like
-// implements Node<Validator<T>>, Validator<T, List<Optional<Error>>>
-// this would mean that the Validator interface gets more generic; not
-// sure if there is a way to circumvent most Validator implementations having to deal with
-// this
-
-// TODO alternative names?
-// ValidatorTree
-// HierarchicalValidator
-// ValidatorDependency
-// ...
+// TODO I only used the name ValidatorTree as the ValidatorNode name is already taken by the interface
+// otherwise I would call this a ValidatorNode
 /**
  * ValidatorTree is a hierarchical {@link Validator}.
  *
  * @param <T> type of entity to be validated
  */
-// public class ValidatorTree<T> implements Node<Validator<T>>
 public class ValidatorTree<T> implements ValidatorNode<T>
 {
-    private final Validator<T> validator;
+    private ValidatorNode<T> parent;
+
+    // TODO this represents a Validator that returns a single error. this will
+    // not work for a collection validator
+    // to align with the collection validator this validator needs to be wrapped
+    // so it returns a Node<Optional<Error>>
+    // the node will just be a single node. This is why I wanted to change the
+    // signature to
+    // private final Validator<T, Node<Optional<Error>>> validator;
+    private final Validator<T, Optional<Error>> validator;
 
     private final List<ValidatorNode<T>> children = new ArrayList<>();
 
     public ValidatorTree()
     {
+        this.parent = null;
         this.validator = ( bundle, input ) -> Optional.empty();
     }
 
-    public ValidatorTree( Validator<T> validator )
+    public ValidatorTree( Validator<T, Optional<Error>> validator )
     {
+        this( null, validator );
+    }
+
+    public ValidatorTree( ValidatorNode<T> parent, Validator<T, Optional<Error>> validator )
+    {
+        this.parent = parent;
         this.validator = validator;
     }
 
     public ValidatorTree( SimpleValidator<T> validator )
     {
+        this( null, validator );
+    }
+
+    public ValidatorTree( ValidatorNode<T> parent, SimpleValidator<T> validator )
+    {
+        this.parent = parent;
         this.validator = validator;
+    }
+
+    public ValidatorTree( Predicate<T> validator, BiFunction<TrackerIdSchemeParams, T, Error> error )
+    {
+        this.parent = null;
+        this.validator = ( bundle, input ) -> {
+
+            if ( validator.test( input ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
+        };
+    }
+
+    public ValidatorTree( ValidatorNode<T> parent, Predicate<T> validator,
+        BiFunction<TrackerIdSchemeParams, T, Error> error )
+    {
+        this.parent = parent;
+        this.validator = ( bundle, input ) -> {
+
+            if ( validator.test( input ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
+        };
+    }
+
+    public <S> ValidatorTree( Function<T, S> map, Predicate<S> validator,
+        BiFunction<TrackerIdSchemeParams, S, Error> error )
+    {
+        this( null, map, validator, error );
+    }
+
+    public <S> ValidatorTree( ValidatorNode<T> parent, Function<T, S> map, Predicate<S> validator,
+        BiFunction<TrackerIdSchemeParams, S, Error> error )
+    {
+        this.parent = parent;
+        this.validator = ( bundle, input ) -> {
+            S mappedInput = map.apply( input );
+            if ( validator.test( mappedInput ) )
+            {
+                return Optional.empty();
+            }
+
+            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
+        };
+    }
+
+    @Override
+    public void setParent( ValidatorNode<T> parent )
+    {
+        this.parent = parent;
     }
 
     // TODO without the hack of passing in the class Java cannot infer the type
     public static <T> ValidatorTree<T> validate( Class<T> klass )
     {
-        return new ValidatorTree<>( input -> Optional.empty() );
+        return new ValidatorTree<>();
     }
 
+    // TODO these nodes will have no parent; do I want root nodes that have a
+    // validator in them?
     public static <T> ValidatorTree<T> validate( SimpleValidator<T> validator )
     {
         return new ValidatorTree<>( validator );
@@ -97,30 +161,13 @@ public class ValidatorTree<T> implements ValidatorNode<T>
     public static <T, S> ValidatorTree<T> validate( Function<T, S> map, Predicate<S> validator,
         BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
-        return new ValidatorTree<>( ( bundle, input ) -> {
-
-            S mappedInput = map.apply( input );
-            if ( validator.test( mappedInput ) )
-            {
-                return Optional.empty();
-            }
-
-            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), mappedInput ) );
-        } );
+        return new ValidatorTree<>( map, validator, error );
     }
 
     public static <T> ValidatorTree<T> validate( Predicate<T> validator,
         BiFunction<TrackerIdSchemeParams, T, Error> error )
     {
-        return new ValidatorTree<>( ( bundle, input ) -> {
-
-            if ( validator.test( input ) )
-            {
-                return Optional.empty();
-            }
-
-            return Optional.of( error.apply( bundle.getPreheat().getIdSchemes(), input ) );
-        } );
+        return new ValidatorTree<>( validator, error );
     }
 
     /**
@@ -129,9 +176,9 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public ValidatorTree<T> andThen( Validator<T> after )
+    public ValidatorTree<T> andThen( Validator<T, Optional<Error>> after )
     {
-        this.children.add( new ValidatorTree<>( after ) );
+        this.children.add( new ValidatorTree<>( this, after ) );
         return this;
     }
 
@@ -141,10 +188,10 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param after validator to apply after this validator
      * @return
      */
-    public <S> ValidatorTree<T> andThen( Function<T, S> map, Validator<S> after )
+    public <S> ValidatorTree<T> andThen( Function<T, S> map, Validator<S, Optional<Error>> after )
     {
-        this.children.add( new ValidatorTree<>(
-            ( bundle, input ) -> after.test( bundle, map.apply( input ) ) ) );
+        this.children.add( new ValidatorTree<>( this,
+            ( bundle, input ) -> after.apply( bundle, map.apply( input ) ) ) );
         return this;
     }
 
@@ -157,7 +204,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
     public <S> ValidatorTree<T> andThen( Function<T, S> map, ValidatorNode<S> after )
     {
         // TODO can this even work?
-        this.children.add( new ValidatorTree<>(
+        this.children.add( new ValidatorTree<>( this,
             ( bundle, input ) -> after.apply( bundle, map.apply( input ) ).get() ) );
         return this;
     }
@@ -170,13 +217,14 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      */
     public ValidatorTree<T> andThen( ValidatorNode<T> after )
     {
+        after.setParent( this );
         this.children.add( after );
         return this;
     }
 
     public ValidatorTree<T> andThen( Predicate<T> after, BiFunction<TrackerIdSchemeParams, T, Error> error )
     {
-        this.children.add( validate( after, error ) );
+        this.children.add( new ValidatorTree<>( this, after, error ) );
         return this;
     }
 
@@ -195,47 +243,48 @@ public class ValidatorTree<T> implements ValidatorNode<T>
     public <S> ValidatorTree<T> andThen( Function<T, S> map, Predicate<S> after,
         BiFunction<TrackerIdSchemeParams, S, Error> error )
     {
-        this.children.add( validate( map, after, error ) );
+        this.children.add( new ValidatorTree<>( this, map, after, error ) );
         return this;
     }
 
     @Override
-    public Node<Optional<Error>> apply( TrackerBundle bundle, T input )
+    public ErrorNode apply( TrackerBundle bundle, T input )
     {
         return this.apply( this, bundle, input );
     }
 
-    public Node<Optional<Error>> apply( ValidatorNode<T> root, TrackerBundle bundle, T input )
+    public ErrorNode apply( ValidatorNode<T> root, TrackerBundle bundle, T input )
     {
         ErrorNode result = null;
-        Node<Validator<T>> current;
-        Stack<Node<Validator<T>>> stack = new Stack<>();
+        Node<Validator<T, ErrorNode>> current;
+        Stack<Node<Validator<T, ErrorNode>>> stack = new Stack<>();
         stack.push( root );
 
         while ( !stack.empty() )
         {
             current = stack.pop();
 
-            Optional<Error> error = current.get().test( bundle, input );
+            ErrorNode error = current.get().apply( bundle, input );
+
             // TODO this is to accommodate the root Validator which should end
             // up as a root
             // on the result ErrorNode and not be a child of an empty ErrorNode
             if ( result == null )
             {
-                result = new ErrorNode( error );
+                result = error;
             }
             else
             {
-                result.add( new ErrorNode( error ) );
+                result.add( error );
             }
 
-            if ( error.isPresent() )
+            if ( error.hasError() )
             {
                 // only visit children of valid parents
                 continue;
             }
 
-            for ( Node<Validator<T>> child : current.getChildren() )
+            for ( Node<Validator<T, ErrorNode>> child : current.getChildren() )
             {
                 stack.push( child );
             }
@@ -243,14 +292,16 @@ public class ValidatorTree<T> implements ValidatorNode<T>
         return result;
     }
 
-    public void apply( TrackerBundle bundle, T input, Consumer<Optional<Error>> consumer )
+    public void apply( TrackerBundle bundle, T input, Consumer<ErrorNode> consumer )
     {
         traverseDepthFirst( this, validator -> {
-            Optional<Error> error = validator.test( bundle, input );
+
+            ErrorNode error = validator.apply( bundle, input );
+
             consumer.accept( error );
 
             // only visit children of valid parents
-            return error.isEmpty();
+            return error.hasError();
         } );
     }
 
@@ -262,11 +313,11 @@ public class ValidatorTree<T> implements ValidatorNode<T>
      * @param visit called with the current validator, skip visiting children on
      *        false
      */
-    public void traverseDepthFirst( ValidatorNode<T> root, Function<Validator<T>, Boolean> visit )
+    public void traverseDepthFirst( ValidatorNode<T> root, Function<Validator<T, ErrorNode>, Boolean> visit )
     {
 
-        Node<Validator<T>> current;
-        Stack<Node<Validator<T>>> stack = new Stack<>();
+        Node<Validator<T, ErrorNode>> current;
+        Stack<Node<Validator<T, ErrorNode>>> stack = new Stack<>();
         stack.push( root );
 
         while ( !stack.empty() )
@@ -279,7 +330,7 @@ public class ValidatorTree<T> implements ValidatorNode<T>
                 continue;
             }
 
-            for ( Node<Validator<T>> child : current.getChildren() )
+            for ( Node<Validator<T, ErrorNode>> child : current.getChildren() )
             {
                 stack.push( child );
             }
@@ -292,18 +343,21 @@ public class ValidatorTree<T> implements ValidatorNode<T>
     public List<Error> test( TrackerBundle bundle, T input )
     {
         List<Error> errs = new ArrayList<>();
-        this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
+        // TODO need to flatten the ErrorNode
+        // maybe I should add such a method to the Node interface itself as
+        // default
+        // this.apply( bundle, input, o -> o.ifPresent( errs::add ) );
         return errs;
     }
 
     @Override
-    public Validator<T> get()
+    public Validator<T, ErrorNode> get()
     {
-        return validator;
+        return this;
     }
 
     @Override
-    public List<? extends Node<Validator<T>>> getChildren()
+    public List<? extends Node<Validator<T, ErrorNode>>> getChildren()
     {
         return children;
     }
