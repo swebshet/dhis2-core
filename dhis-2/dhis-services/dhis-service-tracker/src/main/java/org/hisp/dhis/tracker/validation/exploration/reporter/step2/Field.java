@@ -27,16 +27,28 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-@FunctionalInterface
-public interface Validator<T>
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+public class Field
 {
 
-    // TODO the interface in step2 is simplified so right now there is not
-    // TrackerBundle/Preheat this is easy to adjust. Imagine this function is
-    // getting the
-    // boolean apply( ErrorReporter reporter, TrackerBundle bundle, T input );
-    // So we can keep the simplicity of Validators not needing a "context" we
-    // can create a SimpleValidator interface
-    // that implements the Validator interface and just throws a way the bundle
-    boolean apply( ErrorReporter reporter, T input );
+    public static <T, S> Validator<T> field( Function<T, S> map, Validator<S> validator )
+    {
+        return ( reporter, input ) -> validator.apply( reporter, map.apply( input ) );
+    }
+
+    public static <T, S> Validator<T> field( Function<T, S> map, Predicate<S> validator, String error )
+    {
+
+        return ( reporter, input ) -> {
+
+            if ( !validator.test( map.apply( input ) ) )
+            {
+                return reporter.add( error );
+            }
+
+            return true;
+        };
+    }
 }

@@ -27,25 +27,10 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class Must
 {
-
-    public static <T, S> Validator<T> must( Function<T, S> map, Predicate<S> validator, String error )
-    {
-
-        return ( reporter, input ) -> {
-
-            if ( !validator.test( map.apply( input ) ) )
-            {
-                return reporter.add( error );
-            }
-
-            return true;
-        };
-    }
 
     public static <T> Validator<T> must( Predicate<T> validator, String error )
     {

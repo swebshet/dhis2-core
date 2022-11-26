@@ -113,7 +113,7 @@ class EnrollmentValidatorTest
 
         boolean isValid = validator.apply( reporter, enrollment );
 
-        assertContainsOnly( List.of( "E1048", "E1025", "E1119" ), reporter.getErrors() );
+        assertContainsOnly( List.of( "E1048", "E1048", "E1048", "E1025", "E1119" ), reporter.getErrors() );
         assertFalse( isValid );
     }
 

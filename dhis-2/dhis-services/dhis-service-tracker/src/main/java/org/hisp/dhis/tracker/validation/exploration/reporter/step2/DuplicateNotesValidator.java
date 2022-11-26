@@ -27,16 +27,50 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-@FunctionalInterface
-public interface Validator<T>
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+
+import org.hisp.dhis.tracker.domain.Note;
+import org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook;
+import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
+
+/**
+ * Would replace {@link EnrollmentNoteValidationHook} specifically
+ * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
+ * itself.
+ */
+class DuplicateNotesValidator implements Validator<Note>
 {
 
+    public static Validator<Note> notBeADuplicate()
+    {
+        return new DuplicateNotesValidator();
+    }
+
     // TODO the interface in step2 is simplified so right now there is not
-    // TrackerBundle/Preheat this is easy to adjust. Imagine this function is
-    // getting the
-    // boolean apply( ErrorReporter reporter, TrackerBundle bundle, T input );
-    // So we can keep the simplicity of Validators not needing a "context" we
-    // can create a SimpleValidator interface
-    // that implements the Validator interface and just throws a way the bundle
-    boolean apply( ErrorReporter reporter, T input );
+    // TrackerBundle/Preheat
+    // see comments in Validator interface
+    @Override
+    public boolean apply( ErrorReporter reporter, Note note )
+    {
+
+        // Ignore notes with no UID or no text
+        if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) )
+        {
+            return true;
+        }
+
+        // TODO in the original validation we return a warning; my simple
+        // reporter only adds errors; so imagine a call to addWarning()
+        // if we would have the preheat then simply do
+        // if ( bundle.getPreheat().getNote( note.getNote() ).isPresent() )
+
+        // TODO see above comments. This matches the valid program in our test
+        // just to show how everything fits together
+        if ( "Kj6vYde4LHh".equals( note.getNote() ) )
+        {
+            return reporter.add( "E1119" );
+        }
+
+        return true;
+    }
 }

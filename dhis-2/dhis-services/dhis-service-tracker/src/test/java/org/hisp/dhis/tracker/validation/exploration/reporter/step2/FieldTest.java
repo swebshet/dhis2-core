@@ -27,16 +27,39 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-@FunctionalInterface
-public interface Validator<T>
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Field.field;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import java.util.List;
+
+import org.hisp.dhis.tracker.domain.Enrollment;
+import org.junit.jupiter.api.Test;
+
+public class FieldTest
 {
 
-    // TODO the interface in step2 is simplified so right now there is not
-    // TrackerBundle/Preheat this is easy to adjust. Imagine this function is
-    // getting the
-    // boolean apply( ErrorReporter reporter, TrackerBundle bundle, T input );
-    // So we can keep the simplicity of Validators not needing a "context" we
-    // can create a SimpleValidator interface
-    // that implements the Validator interface and just throws a way the bundle
-    boolean apply( ErrorReporter reporter, T input );
+    @Test
+    void testField()
+    {
+
+        Enrollment enrollment = new Enrollment();
+        enrollment.setTrackedEntity( "PuBvJxDB73z" );
+
+        Validator<String> isValidUid = ( r, uid ) -> {
+            return r.add( uid ); // to demonstrate that we are getting the
+                                 // trackedEntity field
+        };
+
+        Validator<Enrollment> validator = field(
+            Enrollment::getTrackedEntity,
+            isValidUid );
+
+        ErrorReporter reporter = new ErrorReporter();
+
+        boolean isValid = validator.apply( reporter, enrollment );
+
+        assertFalse( isValid );
+        assertEquals( List.of( "PuBvJxDB73z" ), reporter.getErrors() );
+    }
 }

@@ -28,6 +28,9 @@
 package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.DuplicateNotesValidator.notBeADuplicate;
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Field.field;
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Must.must;
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Seq.seq;
 
@@ -36,36 +39,39 @@ import java.util.Objects;
 import org.apache.commons.lang3.StringUtils;
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import org.hisp.dhis.tracker.domain.Note;
 
 public class EnrollmentValidator
 {
-    public static Validator<Enrollment> uidProperties()
-    {
-        return all( Enrollment.class,
-            must( Enrollment::getEnrollment, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
-        );
-        // TODO I have an idea of how to make this work
-        // It might be best though to first think about how invalid notes could
-        // be tagged/collected at the end of the validation
-        // first
-        // .validateEach( Enrollment::getNotes, Note::getNote,
-        // CodeGenerator::isValidUid, error( E1048 ) ); //
-        // PreCheckUidValidationHook
-    }
-
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
-            uidProperties(),
+            containValidUids(),
             must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
-            must( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
-            seq( Enrollment.class,
-                must( Enrollment::getProgram, CommonValidations::notBeBlank, "E1122" ), // PreCheckMandatoryFieldsValidationHook
-                must( Enrollment::getProgram, CommonValidations::beInPreheat, "E1069" ) // PreCheckMetaValidationHook
-            ),
-            must( Enrollment::getEnrolledAt, Objects::nonNull, "E1025" ) // EnrollmentDateValidationHook.validateMandatoryDates
+            field( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
+            field( Enrollment::getProgram,
+                seq( MetadataIdentifier.class,
+                    must( CommonValidations::notBeBlank, "E1122" ), // PreCheckMandatoryFieldsValidationHook
+                    must( CommonValidations::beInPreheat, "E1069" ) // PreCheckMetaValidationHook
+                ) ),
+            field( Enrollment::getEnrolledAt, Objects::nonNull, "E1025" ), // EnrollmentDateValidationHook.validateMandatoryDates
+            field( Enrollment::getNotes,
+                each( Note.class,
+                    noteValidator() ) ) );
+    }
+
+    public static Validator<Enrollment> containValidUids()
+    {
+        return all( Enrollment.class,
+            field( Enrollment::getEnrollment, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
         );
-        // PreCheckMandatoryFieldsValidationHook
-        // // .andThen(Enrollment::getNotes, each(Node.class) );
+    }
+
+    public static Validator<Note> noteValidator()
+    {
+        return all( Note.class,
+            field( Note::getNote, CodeGenerator::isValidUid, "E1048" ), // PreCheckUidValidationHook
+            notBeADuplicate() );
     }
 }
