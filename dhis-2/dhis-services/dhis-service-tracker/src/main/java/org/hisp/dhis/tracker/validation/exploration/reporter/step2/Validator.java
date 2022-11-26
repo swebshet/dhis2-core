@@ -25,35 +25,11 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
+package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-public class Must
+@FunctionalInterface
+public interface Validator<T>
 {
 
-    public static <T, S> Validator<T> must( Function<T, S> map, Predicate<S> validator, String error )
-    {
-
-        return ( reporter, input ) -> {
-
-            if ( !validator.test( map.apply( input ) ) )
-            {
-                reporter.add( error );
-            }
-        };
-    }
-
-    public static <T> Validator<T> must( Predicate<T> validator, String error )
-    {
-
-        return ( reporter, input ) -> {
-
-            if ( !validator.test( input ) )
-            {
-                reporter.add( error );
-            }
-        };
-    }
+    boolean apply( ErrorReporter reporter, T input );
 }

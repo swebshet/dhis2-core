@@ -25,35 +25,58 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
+package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Must
+import lombok.Getter;
+
+@Getter
+public class ErrorReporter
 {
 
-    public static <T, S> Validator<T> must( Function<T, S> map, Predicate<S> validator, String error )
+    private final boolean failFast;
+
+    private final List<String> errors;
+
+    public ErrorReporter()
     {
-
-        return ( reporter, input ) -> {
-
-            if ( !validator.test( map.apply( input ) ) )
-            {
-                reporter.add( error );
-            }
-        };
+        this.failFast = false;
+        this.errors = new ArrayList<>();
     }
 
-    public static <T> Validator<T> must( Predicate<T> validator, String error )
+    public ErrorReporter( boolean failFast )
     {
+        this.failFast = failFast;
+        this.errors = new ArrayList<>();
+    }
 
-        return ( reporter, input ) -> {
+    static ErrorReporter reportAll()
+    {
+        return new ErrorReporter();
+    }
 
-            if ( !validator.test( input ) )
-            {
-                reporter.add( error );
-            }
-        };
+    static ErrorReporter reportUntilFirst()
+    {
+        return new ErrorReporter( true );
+    }
+
+    public boolean add( String error )
+    {
+        if ( this.failFast )
+        {
+            // TODO with the current design of Validator we could implement
+            // fail-fast validations by throwing an
+            // exception here that needs to be handled by the code orchestrating
+            // the validation like we currently do
+        }
+        this.errors.add( error );
+
+        // this is to discourage adding more than one error and to make it
+        // easier to write lambda validations as
+        // we can simply return directly on report.add(error) with false
+        // indicating that the validation failed
+        return false;
     }
 }

@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
+package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -41,7 +41,10 @@ public class Must
             if ( !validator.test( map.apply( input ) ) )
             {
                 reporter.add( error );
+                return false;
             }
+
+            return true;
         };
     }
 
@@ -53,7 +56,10 @@ public class Must
             if ( !validator.test( input ) )
             {
                 reporter.add( error );
+                return false;
             }
+
+            return true;
         };
     }
 }

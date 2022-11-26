@@ -25,35 +25,48 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
+package org.hisp.dhis.tracker.validation.exploration.reporter.step2;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.Collection;
 
-public class Must
+/**
+ * Validator applying {@link Validator} to each element in a collection of type
+ * T.
+ *
+ * @param <T> type to validate
+ */
+public class Each<T> implements Validator<Collection<T>>
 {
 
-    public static <T, S> Validator<T> must( Function<T, S> map, Predicate<S> validator, String error )
+    private final Validator<T> validator;
+
+    public Each( Validator<T> validator )
     {
-
-        return ( reporter, input ) -> {
-
-            if ( !validator.test( map.apply( input ) ) )
-            {
-                reporter.add( error );
-            }
-        };
+        this.validator = validator;
     }
 
-    public static <T> Validator<T> must( Predicate<T> validator, String error )
+    // TODO if I do not pass the class the compiler does not have enough
+    // information to infer the type. So without it
+    // the client code is working with an Object. Casting on the client could
+    // also work but that's even more awkward.
+    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
     {
+        return new Each<>( validator );
+    }
 
-        return ( reporter, input ) -> {
+    @Override
+    public boolean apply( ErrorReporter reporter, Collection<T> input )
+    {
+        boolean result = true;
 
-            if ( !validator.test( input ) )
+        for ( T in : input )
+        {
+            if ( !validator.apply( reporter, in ) )
             {
-                reporter.add( error );
+                result = false;
             }
-        };
+        }
+
+        return result;
     }
 }
