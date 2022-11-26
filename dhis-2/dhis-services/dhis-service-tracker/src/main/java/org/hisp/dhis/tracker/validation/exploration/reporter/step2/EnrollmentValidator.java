@@ -31,23 +31,41 @@ import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.All.al
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Must.must;
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Seq.seq;
 
+import java.util.Objects;
+
 import org.apache.commons.lang3.StringUtils;
+import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
 
 public class EnrollmentValidator
 {
+    public static Validator<Enrollment> uidProperties()
+    {
+        return all( Enrollment.class,
+            must( Enrollment::getEnrollment, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
+        );
+        // TODO I have an idea of how to make this work
+        // It might be best though to first think about how invalid notes could
+        // be tagged/collected at the end of the validation
+        // first
+        // .validateEach( Enrollment::getNotes, Note::getNote,
+        // CodeGenerator::isValidUid, error( E1048 ) ); //
+        // PreCheckUidValidationHook
+    }
+
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
+            uidProperties(),
             must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
             must( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
             seq( Enrollment.class,
                 must( Enrollment::getProgram, CommonValidations::notBeBlank, "E1122" ), // PreCheckMandatoryFieldsValidationHook
                 must( Enrollment::getProgram, CommonValidations::beInPreheat, "E1069" ) // PreCheckMetaValidationHook
-            ) );
+            ),
+            must( Enrollment::getEnrolledAt, Objects::nonNull, "E1025" ) // EnrollmentDateValidationHook.validateMandatoryDates
+        );
         // PreCheckMandatoryFieldsValidationHook
-        // .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025,
-        // "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
         // // .andThen(Enrollment::getNotes, each(Node.class) );
     }
 }

@@ -63,6 +63,11 @@ public class All<T> implements Validator<T>
         this( List.of( v1, v2, v3, v4 ) );
     }
 
+    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5 )
+    {
+        this( List.of( v1, v2, v3, v4, v5 ) );
+    }
+
     // TODO if I do not pass the class the compiler does not have enough
     // information to infer the type. So without it
     // the client code is working with an Object. Casting on the client could
@@ -85,6 +90,12 @@ public class All<T> implements Validator<T>
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
     {
         return new All<>( v1, v2, v3, v4 );
+    }
+
+    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
+        Validator<T> v5 )
+    {
+        return new All<>( v1, v2, v3, v4, v5 );
     }
 
     public static <T> All<T> all( Class<T> klass, List<Validator<T>> validators )
