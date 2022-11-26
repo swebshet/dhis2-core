@@ -83,12 +83,8 @@ class AllTest
         Enrollment enrollment = enrollment();
 
         Validator<Enrollment> validator = all(
-            ( r, e ) -> {
-                r.add( "one" );
-            },
-            ( r, e ) -> {
-                r.add( "two" );
-            } );
+            ( r, e ) -> r.add( "one" ),
+            ( r, e ) -> r.add( "two" ) );
 
         ErrorReporter reporter = new ErrorReporter();
 
@@ -104,22 +100,19 @@ class AllTest
         Enrollment enrollment = enrollment();
 
         Validator<Enrollment> validator = all(
-            ( r, e ) -> {
-                r.add( "one" );
-            },
-            ( r, e ) -> {
-                r.add( "two" );
-            },
-            all( List.of(
-                ( r, e ) -> {
-                    r.add( "three" );
-                } ) ) );
+            ( r, e ) -> r.add( "one" ),
+            ( r, e ) -> r.add( "two" ),
+            all(
+                ( r, e ) -> r.add( "three" ),
+                ( r, e ) -> r.add( "four" ),
+                all(
+                    ( r, e ) -> r.add( "five" ) ) ) );
 
         ErrorReporter reporter = new ErrorReporter();
 
         validator.apply( reporter, enrollment );
 
-        assertEquals( List.of( "one", "two", "three" ), reporter.getErrors() );
+        assertEquals( List.of( "one", "two", "three", "four", "five" ), reporter.getErrors() );
     }
 
     private static Note note( String uid, String value )
