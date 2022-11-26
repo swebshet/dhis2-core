@@ -37,7 +37,7 @@ import org.hisp.dhis.tracker.validation.exploration.initial.idea1.Validator;
 class CommonValidations
 {
 
-    public static boolean notBlank( MetadataIdentifier id )
+    public static boolean notBeBlank( MetadataIdentifier id )
     {
         if ( id == null )
         {
@@ -54,7 +54,7 @@ class CommonValidations
     // TrackerPreheat preheat = bundle.getPreheat();
     // public static boolean programInPreheat(TrackerBundle bundle,
     // ErrorReporter reporter, MetadataIdentifier id )
-    public static boolean programInPreheat( MetadataIdentifier id )
+    public static boolean beInPreheat( MetadataIdentifier id )
     {
 
         // TODO rough example of how it could look like with access to the

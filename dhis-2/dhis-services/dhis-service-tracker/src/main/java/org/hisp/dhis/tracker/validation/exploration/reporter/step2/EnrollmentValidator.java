@@ -31,6 +31,7 @@ import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.All.al
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Must.must;
 import static org.hisp.dhis.tracker.validation.exploration.reporter.step2.Seq.seq;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hisp.dhis.tracker.domain.Enrollment;
 
 public class EnrollmentValidator
@@ -38,17 +39,12 @@ public class EnrollmentValidator
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
-            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ),
+            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
+            must( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
             seq( Enrollment.class,
-                must( Enrollment::getProgram, CommonValidations::notBlank, "E1122" ) ),
-            must( Enrollment::getProgram, CommonValidations::programInPreheat, "E1069" )
-
-        // ) )// PreCheckMandatoryFieldsValidationHook
-        );
-        // // andThen
-        // // PreCheckMetaValidationHook
-        // .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
-        // error( E1122, "trackedEntity" ) ) //
+                must( Enrollment::getProgram, CommonValidations::notBeBlank, "E1122" ), // PreCheckMandatoryFieldsValidationHook
+                must( Enrollment::getProgram, CommonValidations::beInPreheat, "E1069" ) // PreCheckMetaValidationHook
+            ) );
         // PreCheckMandatoryFieldsValidationHook
         // .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025,
         // "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
