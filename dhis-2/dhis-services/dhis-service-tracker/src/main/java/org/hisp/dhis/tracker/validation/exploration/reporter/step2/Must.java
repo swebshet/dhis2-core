@@ -40,8 +40,7 @@ public class Must
 
             if ( !validator.test( map.apply( input ) ) )
             {
-                reporter.add( error );
-                return false;
+                return reporter.add( error );
             }
 
             return true;
@@ -55,8 +54,7 @@ public class Must
 
             if ( !validator.test( input ) )
             {
-                reporter.add( error );
-                return false;
+                return reporter.add( error );
             }
 
             return true;
