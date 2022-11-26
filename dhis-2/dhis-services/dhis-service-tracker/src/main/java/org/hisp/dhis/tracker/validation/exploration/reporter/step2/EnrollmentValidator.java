@@ -63,6 +63,10 @@ public class EnrollmentValidator
 
     public static Validator<Enrollment> containValidUids()
     {
+        // just an example showing that we can group validators into reusable
+        // pieces
+        // think of some Validators that always need to run irrespective of
+        // insert/update/delete
         return all( Enrollment.class,
             field( Enrollment::getEnrollment, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
         );
