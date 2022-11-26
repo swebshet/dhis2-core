@@ -27,16 +27,19 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
 
-import static org.hisp.dhis.tracker.validation.exploration.reporter.step1.All.all;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step1.EnrollmentValidator.enrollmentValidator;
+import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
+import static org.hisp.dhis.utils.Assertions.assertIsEmpty;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.program.Program;
+import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
@@ -46,9 +49,8 @@ import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AllTest
+class EnrollmentValidatorTest
 {
-
     private static final MetadataIdentifier PROGRAM_ID = MetadataIdentifier.ofUid( "MNWZ6hnuhSw" );
 
     private TrackerPreheat preheat;
@@ -56,6 +58,10 @@ class AllTest
     private TrackerBundle bundle;
 
     private TrackerIdSchemeParams idSchemes;
+
+    private Validator<Enrollment> validator;
+
+    private ErrorReporter reporter;
 
     @BeforeEach
     void setUp()
@@ -74,45 +80,67 @@ class AllTest
             .preheat( preheat )
             .build();
 
+        reporter = new ErrorReporter();
+
+        validator = enrollmentValidator();
     }
 
     @Test
-    void testAllAreCalled()
+    void testValidEnrollment()
     {
 
         Enrollment enrollment = enrollment();
 
-        Validator<Enrollment> validator = all( Enrollment.class,
-            ( r, e ) -> r.add( "one" ),
-            ( r, e ) -> r.add( "two" ) );
-
-        ErrorReporter reporter = new ErrorReporter();
-
         validator.apply( reporter, enrollment );
 
-        assertEquals( List.of( "one", "two" ), reporter.getErrors() );
+        assertIsEmpty( reporter.getErrors() );
     }
 
     @Test
-    void testAllNested()
+    void testInvalidEnrollmentWithMultipleErrors()
     {
-
         Enrollment enrollment = enrollment();
-
-        Validator<Enrollment> validator = all( Enrollment.class,
-            ( r, e ) -> r.add( "one" ),
-            ( r, e ) -> r.add( "two" ),
-            all( Enrollment.class,
-                ( r, e ) -> r.add( "three" ),
-                ( r, e ) -> r.add( "four" ),
-                all( Enrollment.class,
-                    ( r, e ) -> r.add( "five" ) ) ) );
-
-        ErrorReporter reporter = new ErrorReporter();
+        // error E1048: invalid UID
+        enrollment.setEnrollment( "invalid" );
+        // error E1025: enrolledAt date is null
+        enrollment.setEnrolledAt( null );
+        // error E1119: duplicate note Kj6vYde4LHh
+        when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
+        enrollment.setNotes( List.of(
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) ) );
 
         validator.apply( reporter, enrollment );
 
-        assertEquals( List.of( "one", "two", "three", "four", "five" ), reporter.getErrors() );
+        assertContainsOnly( List.of( "E1048", "E1025", "E1119" ), reporter.getErrors() );
+    }
+
+    @Test
+    void testInvalidEnrollmentWithProgramNull()
+    {
+        Enrollment enrollment = enrollment();
+        // validation error E1122: program not set
+        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
+        // validation error E1069: will not trigger as there is not even a
+        // program to check in the preheat
+
+        validator.apply( reporter, enrollment );
+
+        assertContainsOnly( List.of( "E1122" ), reporter.getErrors() );
+    }
+
+    @Test
+    void testInvalidEnrollmentWithProgramNotFound()
+    {
+        Enrollment enrollment = enrollment();
+        // validation error E1069: program not found
+        enrollment.setProgram( uid() );
+
+        validator.apply( reporter, enrollment );
+
+        assertContainsOnly( List.of( "E1069" ), reporter.getErrors() );
     }
 
     private static Note note( String uid, String value )
