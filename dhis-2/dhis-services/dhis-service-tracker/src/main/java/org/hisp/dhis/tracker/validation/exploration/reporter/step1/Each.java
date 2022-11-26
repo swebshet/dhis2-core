@@ -27,67 +27,33 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
 
-import java.util.List;
+import java.util.Collection;
 
-import lombok.RequiredArgsConstructor;
-
-@RequiredArgsConstructor
-public class All<T> implements Validator<T>
+public class Each<T> implements Validator<Collection<T>>
 {
 
-    private final List<Validator<T>> validators;
+    private final Validator<T> validator;
 
-    public All( Validator<T> v1 )
+    public Each( Validator<T> validator )
     {
-        this( List.of( v1 ) );
+        this.validator = validator;
     }
 
-    public All( Validator<T> v1, Validator<T> v2 )
+    // TODO if I do not pass the class the compiler does not have enough
+    // information to infer the type. So without it
+    // the client code is working with an Object. Casting on the client could
+    // also work but that's even more awkward.
+    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
     {
-        this( List.of( v1, v2 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        this( List.of( v1, v2, v3 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        this( List.of( v1, v2, v3, v4 ) );
-    }
-
-    public static <T> All<T> all( Validator<T> v1 )
-    {
-        return new All<>( v1 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2 )
-    {
-        return new All<>( v1, v2 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        return new All<>( v1, v2, v3 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        return new All<>( v1, v2, v3, v4 );
-    }
-
-    public static <T> All<T> all( List<Validator<T>> validators )
-    {
-        return new All<>( validators );
+        return new Each<>( validator );
     }
 
     @Override
-    public void apply( ErrorReporter reporter, T input )
+    public void apply( ErrorReporter reporter, Collection<T> input )
     {
-        for ( Validator<T> validator : validators )
+        for ( T in : input )
         {
-            validator.apply( reporter, input );
+            validator.apply( reporter, in );
         }
     }
 }

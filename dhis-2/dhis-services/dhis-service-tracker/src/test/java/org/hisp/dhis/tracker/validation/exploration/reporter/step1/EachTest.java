@@ -27,67 +27,40 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
 
+import static org.hisp.dhis.tracker.validation.exploration.reporter.step1.Each.each;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Collection;
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
+import org.hisp.dhis.tracker.domain.Note;
+import org.junit.jupiter.api.Test;
 
-@RequiredArgsConstructor
-public class All<T> implements Validator<T>
+class EachTest
 {
 
-    private final List<Validator<T>> validators;
-
-    public All( Validator<T> v1 )
+    @Test
+    void testCalledForEachElementInCollection()
     {
-        this( List.of( v1 ) );
+
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note1" ),
+            note( "olfXZzSGacW", "note2" ),
+            note( "jKLB23QZS4I", "note3" ) );
+
+        Validator<Collection<Note>> validator = each( Note.class,
+            ( r, n ) -> r.add( n.getValue() ) );
+
+        ErrorReporter reporter = new ErrorReporter();
+
+        validator.apply( reporter, notes );
+
+        assertEquals( List.of( "note1", "note2", "note3" ), reporter.getErrors() );
     }
 
-    public All( Validator<T> v1, Validator<T> v2 )
+    private static Note note( String uid, String value )
     {
-        this( List.of( v1, v2 ) );
+        return Note.builder().note( uid ).value( value ).build();
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        this( List.of( v1, v2, v3 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        this( List.of( v1, v2, v3, v4 ) );
-    }
-
-    public static <T> All<T> all( Validator<T> v1 )
-    {
-        return new All<>( v1 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2 )
-    {
-        return new All<>( v1, v2 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        return new All<>( v1, v2, v3 );
-    }
-
-    public static <T> All<T> all( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        return new All<>( v1, v2, v3, v4 );
-    }
-
-    public static <T> All<T> all( List<Validator<T>> validators )
-    {
-        return new All<>( validators );
-    }
-
-    @Override
-    public void apply( ErrorReporter reporter, T input )
-    {
-        for ( Validator<T> validator : validators )
-        {
-            validator.apply( reporter, input );
-        }
-    }
 }
