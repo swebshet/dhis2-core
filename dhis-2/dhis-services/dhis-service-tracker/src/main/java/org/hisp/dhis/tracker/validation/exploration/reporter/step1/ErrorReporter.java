@@ -36,10 +36,41 @@ import lombok.Getter;
 public class ErrorReporter
 {
 
-    private List<String> errors = new ArrayList<>();
+    private final boolean failFast;
+
+    private final List<String> errors;
+
+    public ErrorReporter()
+    {
+        this.failFast = false;
+        this.errors = new ArrayList<>();
+    }
+
+    public ErrorReporter( boolean failFast )
+    {
+        this.failFast = failFast;
+        this.errors = new ArrayList<>();
+    }
+
+    static ErrorReporter reportAll()
+    {
+        return new ErrorReporter();
+    }
+
+    static ErrorReporter reportUntilFirst()
+    {
+        return new ErrorReporter( true );
+    }
 
     public ErrorReporter add( String error )
     {
+        if ( this.failFast )
+        {
+            // TODO with the current design of Validator we could implement
+            // fail-fast validations by throwing an
+            // exception here that needs to be handled by the code orchestrating
+            // the validation like we currently do
+        }
         this.errors.add( error );
         return this;
     }
