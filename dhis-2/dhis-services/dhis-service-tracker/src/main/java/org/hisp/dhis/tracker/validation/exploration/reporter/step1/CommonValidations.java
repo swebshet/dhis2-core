@@ -27,30 +27,23 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
 
-import static org.hisp.dhis.tracker.validation.exploration.reporter.step1.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.reporter.step1.Must.must;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import org.hisp.dhis.tracker.validation.exploration.initial.idea1.Validator;
 
-import org.hisp.dhis.tracker.domain.Enrollment;
-
-public class EnrollmentValidator
+/**
+ * It's easy to create common {@link Validator}s or predicates that we can reuse
+ * across our different entities.
+ */
+class CommonValidations
 {
-    public static Validator<Enrollment> enrollmentValidator()
+
+    public static boolean notBlank( MetadataIdentifier id )
     {
-        return all( Enrollment.class,
-            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ),
-            all( Enrollment.class,
-                must( Enrollment::getProgram, CommonValidations::notBlank, "E1122" ) )
-        // add seq()
-        // .andThen( Enrollment::getProgram, CommonValidations::programInPreheat
-        // ) )// PreCheckMandatoryFieldsValidationHook
-        );
-        // // andThen
-        // // PreCheckMetaValidationHook
-        // .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
-        // error( E1122, "trackedEntity" ) ) //
-        // PreCheckMandatoryFieldsValidationHook
-        // .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025,
-        // "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
-        // // .andThen(Enrollment::getNotes, each(Node.class) );
+        if ( id == null )
+        {
+            return false;
+        }
+
+        return id.isNotBlank();
     }
 }
