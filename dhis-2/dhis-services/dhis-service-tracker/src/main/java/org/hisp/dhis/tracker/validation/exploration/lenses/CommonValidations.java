@@ -25,7 +25,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.func;
+package org.hisp.dhis.tracker.validation.exploration.lenses;
 
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 

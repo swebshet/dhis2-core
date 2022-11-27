@@ -25,56 +25,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.func;
+package org.hisp.dhis.tracker.validation.exploration.lenses;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
+
+import java.util.Collection;
+import java.util.Optional;
 
 /**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
+ * Validator applying {@link Validator} to each element in a collection of type
+ * T.
+ *
+ * @param <T> type to validate
  */
-class CommonValidations
+public class Each<T> implements Validator<Collection<T>>
 {
 
-    public static boolean notBeBlank( MetadataIdentifier id )
-    {
-        if ( id == null )
-        {
-            return false;
-        }
+    private final Validator<T> validator;
 
-        return id.isNotBlank();
+    public Each( Validator<T> validator )
+    {
+        this.validator = validator;
     }
 
-    // TODO the interface in step2 is simplified so right now there is not
-    // TrackerBundle/Preheat
-    // this is easy to adjust. Imagine this function is getting the
-    // TrackerBundle/Preheat
-    // TrackerPreheat preheat = bundle.getPreheat();
-    // public static boolean programInPreheat(TrackerBundle bundle,
-    // ErrorReporter reporter, MetadataIdentifier id )
-    public static boolean beInPreheat( MetadataIdentifier id )
+    // TODO if I do not pass the class the compiler does not have enough
+    // information to infer the type. So without it
+    // the client code is working with an Object. Casting on the client could
+    // also work but that's even more awkward.
+    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
     {
+        return new Each<>( validator );
+    }
 
-        // TODO rough example of how it could look like with access to the
-        // preheat
-        // If we find a way to make this more generic or fit in with the other
-        // functions we could extract the
-        // class. Its a common pattern to check for existance so a function like
-        //
-        // Program p = preheat.get( Program.class, id );
-        // if ( p == null )
-        // {
-        // return error( preheat.getIdSchemes(), E1069, id );
-        // }
+    @Override
+    public Optional<Error> apply( Collection<T> input )
+    {
+        Optional<Error> result = succeed();
 
-        // TODO see above comments. This matches the valid program in our test
-        // just to show how everything fits together
-        if ( !id.equals( MetadataIdentifier.ofUid( "MNWZ6hnuhSw" ) ) )
+        for ( T in : input )
         {
-            return false;
+            Optional<Error> error = validator.apply( in );
+            if ( result.isPresent() )
+            {
+                result.get().append( error );
+            }
+            else
+            {
+                result = error;
+            }
         }
 
-        return true;
+        return result;
     }
 }

@@ -25,56 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.func;
+package org.hisp.dhis.tracker.validation.exploration.lenses;
 
-import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import java.util.Optional;
 
-/**
- * It's easy to create common {@link Validator}s or predicates that we can reuse
- * across our different entities.
- */
-class CommonValidations
+@FunctionalInterface
+public interface Validator<T>
 {
 
-    public static boolean notBeBlank( MetadataIdentifier id )
-    {
-        if ( id == null )
-        {
-            return false;
-        }
-
-        return id.isNotBlank();
-    }
-
     // TODO the interface in step2 is simplified so right now there is not
-    // TrackerBundle/Preheat
-    // this is easy to adjust. Imagine this function is getting the
-    // TrackerBundle/Preheat
-    // TrackerPreheat preheat = bundle.getPreheat();
-    // public static boolean programInPreheat(TrackerBundle bundle,
-    // ErrorReporter reporter, MetadataIdentifier id )
-    public static boolean beInPreheat( MetadataIdentifier id )
-    {
-
-        // TODO rough example of how it could look like with access to the
-        // preheat
-        // If we find a way to make this more generic or fit in with the other
-        // functions we could extract the
-        // class. Its a common pattern to check for existance so a function like
-        //
-        // Program p = preheat.get( Program.class, id );
-        // if ( p == null )
-        // {
-        // return error( preheat.getIdSchemes(), E1069, id );
-        // }
-
-        // TODO see above comments. This matches the valid program in our test
-        // just to show how everything fits together
-        if ( !id.equals( MetadataIdentifier.ofUid( "MNWZ6hnuhSw" ) ) )
-        {
-            return false;
-        }
-
-        return true;
-    }
+    // TrackerBundle/Preheat this is easy to adjust. Imagine this function is
+    // getting the
+    // boolean apply( ErrorReporter reporter, TrackerBundle bundle, T input );
+    // So we can keep the simplicity of Validators not needing a "context" we
+    // can create a SimpleValidator interface
+    // that implements the Validator interface and just throws a way the bundle
+    Optional<Error> apply( T input );
 }
