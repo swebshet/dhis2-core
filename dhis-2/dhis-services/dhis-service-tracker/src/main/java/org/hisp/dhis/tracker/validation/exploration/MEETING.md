@@ -66,8 +66,8 @@ back for every error does not mean our code needs pass on the burden to every va
 I think
 
 * our validation interface needs to
-  * allow or even guide us in writing more targeted validators. My idea would be a validator per error code.
-  * ideally prevent us from mutating the payload
+  * guide us in writing more targeted validators. My idea would be a validator per error code.
+  * prevent us from mutating the payload
   * TrackerBundle should be replaced by a dedicated Context that only contains what is needed by validators. It should
     only give read-only access to it. (lets discuss this separately)
 * we need building blocks that allow us to decompose our complex validation into smaller validators
