@@ -27,45 +27,39 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import java.util.ArrayList;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.func.Field.field;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.List;
 import java.util.Optional;
 
-import lombok.Getter;
+import org.hisp.dhis.tracker.domain.Enrollment;
+import org.junit.jupiter.api.Test;
 
-@Getter
-public class Error
+public class FieldTest
 {
-    private final List<String> errors;
 
-    // wonder if we should discourage creating an empty Error as we want to
-    // indicate a lack of error with an empty
-    // Optional
-    private Error()
+    @Test
+    void testField()
     {
-        this.errors = new ArrayList<>();
-    }
 
-    public Error( String message )
-    {
-        this.errors = new ArrayList<>();
-        this.errors.add( message );
-    }
+        Enrollment enrollment = new Enrollment();
+        enrollment.setTrackedEntity( "PuBvJxDB73z" );
 
-    public Error append( Optional<Error> error )
-    {
-        error.ifPresent( this::append );
-        return this;
-    }
+        Validator<String> isValidUid = uid -> {
+            return error( uid ); // to demonstrate that we are getting the
+                                 // trackedEntity field
+        };
 
-    public Error append( Error error )
-    {
-        this.errors.addAll( error.getErrors() );
-        return this;
-    }
+        Validator<Enrollment> validator = field(
+            Enrollment::getTrackedEntity,
+            isValidUid );
 
-    public static Optional<Error> error( String message )
-    {
-        return Optional.of( new Error( message ) );
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertEquals( List.of( "PuBvJxDB73z" ), error.get().getErrors() );
     }
 }

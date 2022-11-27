@@ -27,45 +27,48 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
-import lombok.Getter;
-
-@Getter
-public class Error
+/**
+ * Validator applying {@link Validator} to each element in a collection of type
+ * T.
+ *
+ * @param <T> type to validate
+ */
+public class Each<T> implements Validator<Collection<T>>
 {
-    private final List<String> errors;
 
-    // wonder if we should discourage creating an empty Error as we want to
-    // indicate a lack of error with an empty
-    // Optional
-    private Error()
+    private final Validator<T> validator;
+
+    public Each( Validator<T> validator )
     {
-        this.errors = new ArrayList<>();
+        this.validator = validator;
     }
 
-    public Error( String message )
+    // TODO if I do not pass the class the compiler does not have enough
+    // information to infer the type. So without it
+    // the client code is working with an Object. Casting on the client could
+    // also work but that's even more awkward.
+    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
     {
-        this.errors = new ArrayList<>();
-        this.errors.add( message );
+        return new Each<>( validator );
     }
 
-    public Error append( Optional<Error> error )
+    @Override
+    public Optional<Error> apply( Collection<T> input )
     {
-        error.ifPresent( this::append );
-        return this;
-    }
+        Optional<Error> result = Optional.empty();
 
-    public Error append( Error error )
-    {
-        this.errors.addAll( error.getErrors() );
-        return this;
-    }
+        for ( T in : input )
+        {
+            Optional<Error> error = validator.apply( in );
+            if ( result.isPresent() )
+            {
+                return error;
+            }
+        }
 
-    public static Optional<Error> error( String message )
-    {
-        return Optional.of( new Error( message ) );
+        return result;
     }
 }

@@ -27,8 +27,8 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.All.all;
 import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.func.Seq.seq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,8 +48,9 @@ import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AllTest
+class SeqTest
 {
+
     private static final MetadataIdentifier PROGRAM_ID = MetadataIdentifier.ofUid( "MNWZ6hnuhSw" );
 
     private Enrollment enrollment;
@@ -73,7 +74,7 @@ class AllTest
     @Test
     void testAllAreCalledPass()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
+        Validator<Enrollment> validator = seq( Enrollment.class,
             e -> Optional.empty(),
             e -> Optional.empty() );
 
@@ -83,34 +84,34 @@ class AllTest
     }
 
     @Test
-    void testAllAreCalledFail()
+    void testSeqCallsUntilFirstError()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
+        Validator<Enrollment> validator = seq( Enrollment.class,
             e -> error( "one" ),
             e -> error( "two" ) );
 
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two" ), error.get().getErrors() );
+        assertEquals( List.of( "one" ), error.get().getErrors() );
     }
 
     @Test
-    void testAllNested()
+    void testSeqNested()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
-            e -> error( "one" ),
-            e -> error( "two" ),
-            all( Enrollment.class,
-                e -> error( "three" ),
-                e -> error( "four" ),
-                all( Enrollment.class,
-                    e -> error( "five" ) ) ) );
+        Validator<Enrollment> validator = seq( Enrollment.class,
+            e -> Optional.empty(), // no error so moving on to the next sequence
+            seq( Enrollment.class,
+                e -> Optional.empty(), // no error so moving on to the next
+                                       // sequence
+                seq( Enrollment.class,
+                    e -> error( "three" ),
+                    e -> error( "four" ) ) ) );
 
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two", "three", "four", "five" ), error.get().getErrors() );
+        assertEquals( List.of( "three" ), error.get().getErrors() );
     }
 
     private static Enrollment enrollment()

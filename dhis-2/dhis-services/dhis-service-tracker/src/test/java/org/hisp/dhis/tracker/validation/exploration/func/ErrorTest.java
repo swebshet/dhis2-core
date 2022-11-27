@@ -27,45 +27,48 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import java.util.ArrayList;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.List;
 import java.util.Optional;
 
-import lombok.Getter;
+import org.junit.jupiter.api.Test;
 
-@Getter
-public class Error
+class ErrorTest
 {
-    private final List<String> errors;
 
-    // wonder if we should discourage creating an empty Error as we want to
-    // indicate a lack of error with an empty
-    // Optional
-    private Error()
+    @Test
+    void testAppendingError()
     {
-        this.errors = new ArrayList<>();
+
+        Error err1 = new Error( "fail1" );
+        Error err2 = new Error( "fail2" );
+
+        Error sum = err1.append( err2 );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    public Error( String message )
+    @Test
+    void testAppendingOptionalErrorIfPresent()
     {
-        this.errors = new ArrayList<>();
-        this.errors.add( message );
+
+        Error err1 = new Error( "fail1" );
+        Error err2 = new Error( "fail2" );
+
+        Error sum = err1.append( Optional.of( err2 ) );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    public Error append( Optional<Error> error )
+    @Test
+    void testAppendingOptionalErrorIfEmpty()
     {
-        error.ifPresent( this::append );
-        return this;
-    }
 
-    public Error append( Error error )
-    {
-        this.errors.addAll( error.getErrors() );
-        return this;
-    }
+        Error err1 = new Error( "fail1" );
 
-    public static Optional<Error> error( String message )
-    {
-        return Optional.of( new Error( message ) );
+        Error sum = err1.append( Optional.empty() );
+
+        assertEquals( List.of( "fail1" ), sum.getErrors() );
     }
 }

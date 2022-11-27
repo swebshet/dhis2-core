@@ -27,45 +27,30 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import java.util.ArrayList;
-import java.util.List;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
-import lombok.Getter;
-
-@Getter
-public class Error
+public class Field
 {
-    private final List<String> errors;
 
-    // wonder if we should discourage creating an empty Error as we want to
-    // indicate a lack of error with an empty
-    // Optional
-    private Error()
+    public static <T, S> Validator<T> field( Function<T, S> map, Validator<S> validator )
     {
-        this.errors = new ArrayList<>();
+        return input -> validator.apply( map.apply( input ) );
     }
 
-    public Error( String message )
+    public static <T, S> Validator<T> field( Function<T, S> map, Predicate<S> validator, String error )
     {
-        this.errors = new ArrayList<>();
-        this.errors.add( message );
-    }
+        return input -> {
 
-    public Error append( Optional<Error> error )
-    {
-        error.ifPresent( this::append );
-        return this;
-    }
+            if ( validator.test( map.apply( input ) ) )
+            {
+                return error( error );
+            }
 
-    public Error append( Error error )
-    {
-        this.errors.addAll( error.getErrors() );
-        return this;
-    }
-
-    public static Optional<Error> error( String message )
-    {
-        return Optional.of( new Error( message ) );
+            return Optional.empty();
+        };
     }
 }

@@ -33,118 +33,78 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Validator applying all {@link Validator} irrespective of whether one fails or
- * not.
+ * Validator applying a sequence of validators in order until a
+ * {@link Validator} fails.
  *
  * @param <T> type to validate
  */
 @RequiredArgsConstructor
-public class All<T> implements Validator<T>
+public class Seq<T> implements Validator<T>
 {
 
     private final List<Validator<T>> validators;
 
-    public All( Validator<T> v1 )
+    public Seq( Validator<T> v1 )
     {
         this( List.of( v1 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2 )
+    public Seq( Validator<T> v1, Validator<T> v2 )
     {
         this( List.of( v1, v2 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
+    public Seq( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
     {
         this( List.of( v1, v2, v3 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
+    public Seq( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
     {
         this( List.of( v1, v2, v3, v4 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5 )
-    {
-        this( List.of( v1, v2, v3, v4, v5 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5, Validator<T> v6 )
-    {
-        this( List.of( v1, v2, v3, v4, v5, v6 ) );
-    }
-
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5, Validator<T> v6,
-        Validator<T> v7 )
-    {
-        this( List.of( v1, v2, v3, v4, v5, v6, v7 ) );
     }
 
     // TODO if I do not pass the class the compiler does not have enough
     // information to infer the type. So without it
     // the client code is working with an Object. Casting on the client could
     // also work but that's even more awkward.
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1 )
+    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1 )
     {
-        return new All<>( v1 );
+        return new Seq<>( v1 );
     }
 
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2 )
+    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2 )
     {
-        return new All<>( v1, v2 );
+        return new Seq<>( v1, v2 );
     }
 
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3 )
+    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3 )
     {
-        return new All<>( v1, v2, v3 );
+        return new Seq<>( v1, v2, v3 );
     }
 
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
+    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
     {
-        return new All<>( v1, v2, v3, v4 );
+        return new Seq<>( v1, v2, v3, v4 );
     }
 
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
-        Validator<T> v5 )
+    public static <T> Seq<T> seq( Class<T> klass, List<Validator<T>> validators )
     {
-        return new All<>( v1, v2, v3, v4, v5 );
-    }
-
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
-        Validator<T> v5, Validator<T> v6 )
-    {
-        return new All<>( v1, v2, v3, v4, v5, v6 );
-    }
-
-    public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
-        Validator<T> v5, Validator<T> v6, Validator<T> v7 )
-    {
-        return new All<>( v1, v2, v3, v4, v5, v6, v7 );
-    }
-
-    public static <T> All<T> all( Class<T> klass, List<Validator<T>> validators )
-    {
-        return new All<>( validators );
+        return new Seq<>( validators );
     }
 
     @Override
     public Optional<Error> apply( T input )
     {
-        Optional<Error> result = Optional.empty();
-
         for ( Validator<T> validator : validators )
         {
             Optional<Error> error = validator.apply( input );
-            if ( result.isPresent() )
+            if ( error.isPresent() )
             {
-                result.get().append( error );
-            }
-            else
-            {
-                result = error;
+                // only apply next validator if previous one was successful
+                return error;
             }
         }
-
-        return result;
+        return Optional.empty();
     }
 }
