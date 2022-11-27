@@ -29,13 +29,16 @@ package org.hisp.dhis.tracker.validation.exploration.lenses;
 
 import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
 import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
+import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
 
+import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.Note;
 import org.junit.jupiter.api.Test;
 
 public class FieldTest
@@ -62,4 +65,26 @@ public class FieldTest
         assertTrue( error.isPresent() );
         assertEquals( List.of( "PuBvJxDB73z" ), error.get().getErrors() );
     }
+
+    @Test
+    void testFieldAddsLens()
+    {
+
+        Note invalid1 = note( "invalid1", "note 1 with invalid uid" );
+
+        Validator<Note> noteValidator = field( Note::getNote, CodeGenerator::isValidUid, "E1048" );
+
+        Optional<Error> error = noteValidator.apply( invalid1 );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1048" ), error.get().getErrors() );
+        // assertEquals( "invalid1",
+        // error.get().getPaths().get(0).get(invalid1));
+    }
+
+    private static Note note( String uid, String value )
+    {
+        return Note.builder().note( uid ).value( value ).build();
+    }
+
 }

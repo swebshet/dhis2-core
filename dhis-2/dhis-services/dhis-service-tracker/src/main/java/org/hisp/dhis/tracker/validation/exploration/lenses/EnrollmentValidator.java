@@ -47,7 +47,7 @@ public class EnrollmentValidator
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
-            containValidUids(),
+            uidsAreValid(),
             must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
             field( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
             field( Enrollment::getProgram,
@@ -61,7 +61,7 @@ public class EnrollmentValidator
                     noteValidator() ) ) );
     }
 
-    public static Validator<Enrollment> containValidUids()
+    public static Validator<Enrollment> uidsAreValid()
     {
         // just an example showing that we can group validators into reusable
         // pieces

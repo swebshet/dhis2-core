@@ -37,6 +37,10 @@ import lombok.Getter;
 public class Error
 {
     private final List<String> errors;
+    // TODO so each error String should actually be an error message and a lens
+    // just start with a list for simplicity now
+
+    // private final List<Lens<>> paths;
 
     // wonder if we should discourage creating an empty Error as we want to
     // indicate a lack of error with an empty
@@ -62,6 +66,11 @@ public class Error
     {
         this.errors.addAll( error.getErrors() );
         return this;
+    }
+
+    public static <T, S> Optional<Error> fail( Lens<T, S> path, String message )
+    {
+        return Optional.of( new Error( message ) );
     }
 
     public static Optional<Error> fail( String message )

@@ -38,7 +38,10 @@ public class Field
 
     public static <T, S> Validator<T> field( Function<T, S> map, Validator<S> validator )
     {
-        return input -> validator.apply( map.apply( input ) );
+        return input -> {
+            // TODO compose Lens.of(map, null) with whatever lens we have in the Optional<Error>
+            return validator.apply( map.apply( input ) );
+        };
     }
 
     public static <T, S> Validator<T> field( Function<T, S> map, Predicate<S> validator, String error )
@@ -47,7 +50,8 @@ public class Field
 
             if ( !validator.test( map.apply( input ) ) )
             {
-                return fail( error );
+                // ignore setters for now
+                return fail(Lens.of(map, null), error );
             }
 
             return succeed();

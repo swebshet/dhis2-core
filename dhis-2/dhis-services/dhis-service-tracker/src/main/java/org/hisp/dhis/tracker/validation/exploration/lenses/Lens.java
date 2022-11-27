@@ -31,6 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+// https://medium.com/expedia-group-tech/lenses-in-java-2b18c7d24366
 // https://github.com/liquidpie/lenses-java/blob/main/src/main/java/com/vivek/pattern/Lens.java
 public final class Lens<A, B>
 {

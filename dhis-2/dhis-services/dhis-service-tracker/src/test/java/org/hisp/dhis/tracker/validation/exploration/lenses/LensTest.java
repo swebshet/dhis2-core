@@ -87,24 +87,23 @@ class LensTest
     }
 
     @Test
-    void testInvalidEnrollmentWithMultipleErrors()
+    void testLensToGetInvalidNotesFromEnrollment()
     {
         Enrollment enrollment = enrollment();
-        // error E1048: invalid UID
-        enrollment.setEnrollment( "invalid" );
-        // error E1025: enrolledAt date is null
-        enrollment.setEnrolledAt( null );
-        // error E1119: duplicate note Kj6vYde4LHh
+        Note invalid1 = note("invalid1", "note 1 with invalid uid");
         enrollment.setNotes( List.of(
             note( "Kj6vYde4LHh", "my duplicate note" ),
             note( "olfXZzSGacW", "valid note" ),
-            note( "invalid1", "note 1 with invalid uid" ),
+                invalid1,
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
-        Optional<Error> error = enrollmentValidator().apply( enrollment );
+        Optional<Error> error = noteValidator().apply( invalid1 );
+        // TODO end goal is validating a top level thing and getting a lens into the deeply nested thing where to error
+        // originated
+//        Optional<Error> error = enrollmentValidator().apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1048", "E1048" ), error.get().getErrors() );
+        assertContainsOnly( List.of( "E1048" ), error.get().getErrors() );
     }
 
     private static Validator<Enrollment> enrollmentValidator()
