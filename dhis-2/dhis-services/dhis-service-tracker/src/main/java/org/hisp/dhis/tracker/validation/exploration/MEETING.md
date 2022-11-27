@@ -74,11 +74,11 @@ I think
 
 ## Potential Ideas
 
-I tried different interfaces to see what their effect is on building validations.
+I tried different interfaces to see what their effect is on building validators.
 
 ### Error reporter
 
-If we stick with the error reporter approach we should at least narrow down the input that is validated by a Validator.
+If we stick with the error reporter approach we should at least narrow down the input that is validated by a validator.
 
 #### Step 1
 
@@ -88,9 +88,12 @@ So I adapted our interface to [Validator](./reporter/step1/Validator.java)
 void apply( ErrorReporter reporter, T input );
 ```
 
-added some building blocks like
+Note: TrackerBundle (or a validation context) is omitted just to iterate more quickly on the variations. Just think its
+there :)
 
-* [All](./reporter/step1/All.java) - run all Validators irrespective of whether one fails
+I added some building blocks like
+
+* [All](./reporter/step1/All.java) - run all Validators irrespective of whether one fails (can be run concurrently)
 * [Each](./reporter/step1/Each.java) - run a Validator for type T on a Collection<T>
 
 so we can build up something like [EnrollmentValidator](./reporter/step1/EnrollmentValidator.java) from smaller validators.
@@ -155,6 +158,8 @@ if (!validator.apply(reporter, input))
 It's also nice that it discourages adding more than one error by making it a little harder than with a fluent style. As
 my goal is for us to write small Validators that only add one error. We can build up more complex Validators using the
 helper/aggregate Validators like All/Seq/Each.
+
+[EnrollmentValidator](./reporter/step2/EnrollmentValidator.java) is already getting more capable.
 
 ### Function
 
