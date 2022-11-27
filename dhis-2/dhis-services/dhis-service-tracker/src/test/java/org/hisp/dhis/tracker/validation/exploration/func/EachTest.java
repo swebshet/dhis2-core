@@ -27,52 +27,58 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
+import static org.hisp.dhis.tracker.validation.exploration.func.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
-/**
- * Validator applying {@link Validator} to each element in a collection of type
- * T.
- *
- * @param <T> type to validate
- */
-public class Each<T> implements Validator<Collection<T>>
+import org.hisp.dhis.tracker.domain.Note;
+import org.junit.jupiter.api.Test;
+
+class EachTest
 {
 
-    private final Validator<T> validator;
-
-    public Each( Validator<T> validator )
+    @Test
+    void testCalledForEachElementInCollectionPasses()
     {
-        this.validator = validator;
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note1" ),
+            note( "olfXZzSGacW", "note2" ),
+            note( "jKLB23QZS4I", "note3" ) );
+
+        Validator<Collection<Note>> validator = each( Note.class,
+            n -> Optional.empty() // no error
+        );
+
+        Optional<Error> error = validator.apply( notes );
+
+        assertFalse( error.isPresent() );
     }
 
-    // TODO if I do not pass the class the compiler does not have enough
-    // information to infer the type. So without it
-    // the client code is working with an Object. Casting on the client could
-    // also work but that's even more awkward.
-    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
+    @Test
+    void testCalledForEachElementInCollectionFails()
     {
-        return new Each<>( validator );
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note1" ),
+            note( "olfXZzSGacW", "note2" ),
+            note( "jKLB23QZS4I", "note3" ) );
+
+        Validator<Collection<Note>> validator = each( Note.class,
+            n -> error( n.getValue() ) );
+
+        Optional<Error> error = validator.apply( notes );
+
+        assertTrue( error.isPresent() );
+        assertEquals( List.of( "note1", "note2", "note3" ), error.get().getErrors() );
     }
 
-    @Override
-    public Optional<Error> apply( Collection<T> input )
+    private static Note note( String uid, String value )
     {
-        Optional<Error> result = Optional.empty();
-
-        for ( T in : input )
-        {
-            Optional<Error> error = validator.apply( in );
-            if ( result.isPresent() )
-            {
-                result.get().append( error );
-            }
-            else
-            {
-                result = error;
-            }
-        }
-
-        return result;
+        return Note.builder().note( uid ).value( value ).build();
     }
 }
