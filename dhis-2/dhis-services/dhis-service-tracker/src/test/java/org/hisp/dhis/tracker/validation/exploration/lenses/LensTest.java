@@ -27,10 +27,16 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.lenses;
 
+import static org.hisp.dhis.tracker.validation.exploration.lenses.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.lenses.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
+import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.tracker.domain.Enrollment;
@@ -80,6 +86,42 @@ class LensTest
         assertEquals( "Kj6vYde4LHh", enrollmentToSecondNote.get( enrollment ).getNote() );
     }
 
+    @Test
+    void testInvalidEnrollmentWithMultipleErrors()
+    {
+        Enrollment enrollment = enrollment();
+        // error E1048: invalid UID
+        enrollment.setEnrollment( "invalid" );
+        // error E1025: enrolledAt date is null
+        enrollment.setEnrolledAt( null );
+        // error E1119: duplicate note Kj6vYde4LHh
+        enrollment.setNotes( List.of(
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) ) );
+
+        Optional<Error> error = enrollmentValidator().apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1048", "E1048" ), error.get().getErrors() );
+    }
+
+    private static Validator<Enrollment> enrollmentValidator()
+    {
+        return all( Enrollment.class,
+            field( Enrollment::getNotes,
+                each( Note.class, noteValidator() ) ) );
+    }
+
+    private static Validator<Note> noteValidator()
+    {
+        return all( Note.class,
+            field( Note::getNote, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
+        // notBeADuplicate()
+        );
+    }
+
     private static Note note( String uid, String value )
     {
         return Note.builder().note( uid ).value( value ).build();
@@ -100,5 +142,4 @@ class LensTest
     {
         return MetadataIdentifier.ofUid( CodeGenerator.generateUid() );
     }
-
 }
