@@ -37,20 +37,10 @@ public class EnrollmentValidator
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
-            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ),
+            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
             all( Enrollment.class,
-                must( Enrollment::getProgram, CommonValidations::notBlank, "E1122" ) )
-        // add seq()
-        // .andThen( Enrollment::getProgram, CommonValidations::programInPreheat
-        // ) )// PreCheckMandatoryFieldsValidationHook
+                must( Enrollment::getProgram, CommonValidations::notBlank, "E1122" ) ) // //
+                                                                                       // PreCheckMandatoryFieldsValidationHook
         );
-        // // andThen
-        // // PreCheckMetaValidationHook
-        // .andThen( Enrollment::getTrackedEntity, StringUtils::isNotEmpty,
-        // error( E1122, "trackedEntity" ) ) //
-        // PreCheckMandatoryFieldsValidationHook
-        // .andThen( Enrollment::getEnrolledAt, Objects::nonNull, error( E1025,
-        // "null" ) ); // EnrollmentDateValidationHook.validateMandatoryDates
-        // // .andThen(Enrollment::getNotes, each(Node.class) );
     }
 }

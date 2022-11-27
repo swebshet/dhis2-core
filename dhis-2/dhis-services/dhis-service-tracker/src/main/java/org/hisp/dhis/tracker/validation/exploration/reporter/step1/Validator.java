@@ -30,6 +30,5 @@ package org.hisp.dhis.tracker.validation.exploration.reporter.step1;
 @FunctionalInterface
 public interface Validator<T>
 {
-
     void apply( ErrorReporter reporter, T input );
 }
