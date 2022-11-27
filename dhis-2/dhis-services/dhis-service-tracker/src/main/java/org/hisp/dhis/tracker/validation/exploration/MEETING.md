@@ -200,8 +200,8 @@ void apply( ErrorReporter reporter, T input );
 boolean apply( ErrorReporter reporter, T input );
 ```
 
-* (-) allows building something like `Seq` but introduces the need to return the correct value depending on whether an error
-  was added
+* (-) gives visibility into if one Validator failed which allows building something like `Seq` but introduces the need
+  to return the correct value depending on whether an error was added
 * (+) no need to concatenate errors to aggregate them
 * (+) easy to build building blocks like `All`, `Each` and `Seq`
 
