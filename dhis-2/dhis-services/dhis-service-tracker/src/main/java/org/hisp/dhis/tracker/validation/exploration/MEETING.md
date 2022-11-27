@@ -9,7 +9,7 @@ Our types often have a large surface area. This is true for validation as well.
 Current [TrackerValidationHook](./../TrackerValidationHook.java) interface
 
 ```java
-    void validate( ValidationErrorReporter report, TrackerBundle bundle );
+void validate( ValidationErrorReporter report, TrackerBundle bundle );
 ```
 
 It takes in a reporter which allows us to add multiple errors and warnings. Almost all of our validation hooks are
@@ -32,6 +32,16 @@ public void validateEnrollment( ValidationErrorReporter reporter, TrackerBundle 
 ```
 
 which hooks override to get a single TEI, enrollment, ...
+
+`AbstractTrackerDtoValidationHook` has more responsibilities like
+
+* making sure a validation hook runs only if it's written for the current strategy (create/update/delete)
+* removing an invalid entity from the payload, so it's not validated any
+  further [see](https://github.com/dhis2/dhis2-core/blob/1c8287b0aa9334c31547c0f9685a7c1de3cb601b/dhis-2/dhis-services/dhis-service-tracker/src/main/java/org/hisp/dhis/tracker/validation/hooks/AbstractTrackerDtoValidationHook.java#L185-L189)
+
+This makes our validation process hard to understand as we have the orchestration of the validation split between the
+* `AbstractTrackerDtoValidationHook`
+* [DefaultTrackerValidationService](https://github.com/dhis2/dhis2-core/blob/1c8287b0aa9334c31547c0f9685a7c1de3cb601b/dhis-2/dhis-services/dhis-service-tracker/src/main/java/org/hisp/dhis/tracker/validation/DefaultTrackerValidationService.java#L89-L113)
 
 ### Reporting Errors
 
