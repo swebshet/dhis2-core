@@ -209,8 +209,10 @@ boolean apply( ErrorReporter reporter, T input );
 Optional<Error> apply(T input);
 ```
 
-* (-) need to concatenate errors in `Error`. I am unsure if this can be a performance issue? But how many validation errors
-  do we typically return from a payload? This would only matter if we return millions? No error means no error/list is
-  even created. By working on an easy to use API a dev would not even notice this fact when writing a Validator.
+* (-) need to concatenate errors in `Error`. I am unsure if this would be a performance issue. But how many validation
+  errors do we typically return from a payload? This would only matter if we return millions? No error means no
+  error/list is even created. By working on an easy-to-use API a dev would not even notice this fact when writing a
+  Validator.
 * (+) easy to build building blocks like `All`, `Each` and `Seq`
-* (+) return the error and the signal that the validation failed
+* (+) return the error and the signal that the validation failed at the same time
+* (+) no need for 
