@@ -29,6 +29,7 @@ package org.hisp.dhis.tracker.validation.exploration.func;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.succeed;
 
 import java.util.Optional;
 
@@ -38,7 +39,7 @@ import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 
 /**
  * Would replace {@link EnrollmentNoteValidationHook} specifically
- * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
+ * {@link ValidationUtils} validateNotes as it's not concerned with Enrollments
  * itself.
  */
 class DuplicateNotesValidator implements Validator<Note>
@@ -59,7 +60,7 @@ class DuplicateNotesValidator implements Validator<Note>
         // Ignore notes with no UID or no text
         if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) )
         {
-            return Optional.empty();
+            return succeed();
         }
 
         // TODO in the original validation we return a warning; my simple
@@ -74,6 +75,6 @@ class DuplicateNotesValidator implements Validator<Note>
             return fail( "E1119" );
         }
 
-        return Optional.empty();
+        return succeed();
     }
 }

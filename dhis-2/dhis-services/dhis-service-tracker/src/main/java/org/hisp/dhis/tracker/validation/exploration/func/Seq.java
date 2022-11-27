@@ -27,6 +27,8 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.succeed;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -105,6 +107,6 @@ public class Seq<T> implements Validator<T>
                 return error;
             }
         }
-        return Optional.empty();
+        return succeed();
     }
 }

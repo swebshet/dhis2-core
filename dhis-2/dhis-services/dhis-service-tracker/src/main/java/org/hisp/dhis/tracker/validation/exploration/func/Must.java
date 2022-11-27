@@ -28,8 +28,8 @@
 package org.hisp.dhis.tracker.validation.exploration.func;
 
 import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.succeed;
 
-import java.util.Optional;
 import java.util.function.Predicate;
 
 public class Must
@@ -45,7 +45,7 @@ public class Must
                 return fail( error );
             }
 
-            return Optional.empty();
+            return succeed();
         };
     }
 }

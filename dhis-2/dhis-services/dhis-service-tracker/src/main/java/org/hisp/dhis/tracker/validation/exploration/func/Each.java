@@ -27,6 +27,8 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.succeed;
+
 import java.util.Collection;
 import java.util.Optional;
 
@@ -58,7 +60,7 @@ public class Each<T> implements Validator<Collection<T>>
     @Override
     public Optional<Error> apply( Collection<T> input )
     {
-        Optional<Error> result = Optional.empty();
+        Optional<Error> result = succeed();
 
         for ( T in : input )
         {

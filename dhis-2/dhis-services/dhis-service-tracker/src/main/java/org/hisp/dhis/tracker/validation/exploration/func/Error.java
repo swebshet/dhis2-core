@@ -69,7 +69,7 @@ public class Error
         return Optional.of( new Error( message ) );
     }
 
-    public static Optional<Error> success()
+    public static Optional<Error> succeed()
     {
         return Optional.empty();
     }
