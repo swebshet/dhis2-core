@@ -27,58 +27,55 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import org.hisp.dhis.tracker.validation.exploration.initial.idea1.Validator;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
-import org.hisp.dhis.tracker.domain.Note;
-import org.junit.jupiter.api.Test;
-
-class EachTest
+/**
+ * It's easy to create common {@link Validator}s or predicates that we can reuse
+ * across our different entities.
+ */
+class CommonValidations
 {
 
-    @Test
-    void testCalledForEachElementInCollectionPasses()
+    public static boolean notBeBlank( MetadataIdentifier id )
     {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
+        if ( id == null )
+        {
+            return false;
+        }
 
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> Optional.empty() // no error
-        );
-
-        Optional<Error> error = validator.apply( notes );
-
-        assertFalse( error.isPresent() );
+        return id.isNotBlank();
     }
 
-    @Test
-    void testCalledForEachElementInCollectionFails()
+    // TODO the interface in step2 is simplified so right now there is not
+    // TrackerBundle/Preheat
+    // this is easy to adjust. Imagine this function is getting the
+    // TrackerBundle/Preheat
+    // TrackerPreheat preheat = bundle.getPreheat();
+    // public static boolean programInPreheat(TrackerBundle bundle,
+    // ErrorReporter reporter, MetadataIdentifier id )
+    public static boolean beInPreheat( MetadataIdentifier id )
     {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
 
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> fail( n.getValue() ) );
+        // TODO rough example of how it could look like with access to the
+        // preheat
+        // If we find a way to make this more generic or fit in with the other
+        // functions we could extract the
+        // class. Its a common pattern to check for existance so a function like
+        //
+        // Program p = preheat.get( Program.class, id );
+        // if ( p == null )
+        // {
+        // return error( preheat.getIdSchemes(), E1069, id );
+        // }
 
-        Optional<Error> error = validator.apply( notes );
+        // TODO see above comments. This matches the valid program in our test
+        // just to show how everything fits together
+        if ( !id.equals( MetadataIdentifier.ofUid( "MNWZ6hnuhSw" ) ) )
+        {
+            return false;
+        }
 
-        assertTrue( error.isPresent() );
-        assertEquals( List.of( "note1", "note2", "note3" ), error.get().getErrors() );
-    }
-
-    private static Note note( String uid, String value )
-    {
-        return Note.builder().note( uid ).value( value ).build();
+        return true;
     }
 }

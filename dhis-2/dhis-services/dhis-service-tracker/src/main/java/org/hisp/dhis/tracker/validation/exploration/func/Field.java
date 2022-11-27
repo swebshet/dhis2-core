@@ -27,7 +27,7 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -45,9 +45,9 @@ public class Field
     {
         return input -> {
 
-            if ( validator.test( map.apply( input ) ) )
+            if ( !validator.test( map.apply( input ) ) )
             {
-                return error( error );
+                return fail( error );
             }
 
             return Optional.empty();

@@ -27,58 +27,25 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Each.each;
 import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
-import org.hisp.dhis.tracker.domain.Note;
-import org.junit.jupiter.api.Test;
-
-class EachTest
+public class Must
 {
 
-    @Test
-    void testCalledForEachElementInCollectionPasses()
+    public static <T> Validator<T> must( Predicate<T> validator, String error )
     {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
 
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> Optional.empty() // no error
-        );
+        return input -> {
 
-        Optional<Error> error = validator.apply( notes );
+            if ( !validator.test( input ) )
+            {
+                return fail( error );
+            }
 
-        assertFalse( error.isPresent() );
-    }
-
-    @Test
-    void testCalledForEachElementInCollectionFails()
-    {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
-
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> fail( n.getValue() ) );
-
-        Optional<Error> error = validator.apply( notes );
-
-        assertTrue( error.isPresent() );
-        assertEquals( List.of( "note1", "note2", "note3" ), error.get().getErrors() );
-    }
-
-    private static Note note( String uid, String value )
-    {
-        return Note.builder().note( uid ).value( value ).build();
+            return Optional.empty();
+        };
     }
 }

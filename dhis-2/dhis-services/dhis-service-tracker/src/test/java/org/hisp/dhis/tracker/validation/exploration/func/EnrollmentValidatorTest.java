@@ -27,9 +27,8 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.hisp.dhis.tracker.validation.exploration.func.EnrollmentValidator.enrollmentValidator;
+import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -41,18 +40,23 @@ import java.util.Optional;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.program.Program;
+import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
+import org.hisp.dhis.tracker.domain.Note;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class AllTest
+class EnrollmentValidatorTest
 {
     private static final MetadataIdentifier PROGRAM_ID = MetadataIdentifier.ofUid( "MNWZ6hnuhSw" );
 
-    private Enrollment enrollment;
+    private TrackerPreheat preheat;
+
+    private Validator<Enrollment> validator;
 
     @BeforeEach
     void setUp()
@@ -61,21 +65,24 @@ class AllTest
         TrackerIdSchemeParams idSchemes = TrackerIdSchemeParams.builder()
             .build();
 
-        TrackerPreheat preheat = mock( TrackerPreheat.class );
+        preheat = mock( TrackerPreheat.class );
         when( preheat.getIdSchemes() ).thenReturn( idSchemes );
 
         Program program = new Program();
         when( preheat.get( Program.class, PROGRAM_ID ) ).thenReturn( program );
 
-        enrollment = enrollment();
+        TrackerBundle bundle = TrackerBundle.builder()
+            .preheat( preheat )
+            .build();
+
+        validator = enrollmentValidator();
     }
 
     @Test
-    void testAllAreCalledPass()
+    void testValidEnrollment()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
-            e -> Optional.empty(),
-            e -> Optional.empty() );
+
+        Enrollment enrollment = enrollment();
 
         Optional<Error> error = validator.apply( enrollment );
 
@@ -83,34 +90,58 @@ class AllTest
     }
 
     @Test
-    void testAllAreCalledFail()
+    void testInvalidEnrollmentWithMultipleErrors()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
-            e -> fail( "one" ),
-            e -> fail( "two" ) );
+        Enrollment enrollment = enrollment();
+        // error E1048: invalid UID
+        enrollment.setEnrollment( "invalid" );
+        // error E1025: enrolledAt date is null
+        enrollment.setEnrolledAt( null );
+        // error E1119: duplicate note Kj6vYde4LHh
+        when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
+        enrollment.setNotes( List.of(
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) ) );
 
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two" ), error.get().getErrors() );
+        assertContainsOnly( List.of( "E1048", "E1048", "E1048", "E1025", "E1119" ), error.get().getErrors() );
     }
 
     @Test
-    void testAllNested()
+    void testInvalidEnrollmentWithProgramNull()
     {
-        Validator<Enrollment> validator = all( Enrollment.class,
-            e -> fail( "one" ),
-            e -> fail( "two" ),
-            all( Enrollment.class,
-                e -> fail( "three" ),
-                e -> fail( "four" ),
-                all( Enrollment.class,
-                    e -> fail( "five" ) ) ) );
+        Enrollment enrollment = enrollment();
+        // validation error E1122: program not set
+        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
+        // validation error E1069: will not trigger as there is not even a
+        // program to check in the preheat
 
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two", "three", "four", "five" ), error.get().getErrors() );
+        assertContainsOnly( List.of( "E1122" ), error.get().getErrors() );
+    }
+
+    @Test
+    void testInvalidEnrollmentWithProgramNotFound()
+    {
+        Enrollment enrollment = enrollment();
+        // validation error E1069: program not found
+        enrollment.setProgram( uid() );
+
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1069" ), error.get().getErrors() );
+    }
+
+    private static Note note( String uid, String value )
+    {
+        return Note.builder().note( uid ).value( value ).build();
     }
 
     private static Enrollment enrollment()
@@ -123,4 +154,10 @@ class AllTest
         enrollment.setEnrolledAt( Instant.now() );
         return enrollment;
     }
+
+    private static MetadataIdentifier uid()
+    {
+        return MetadataIdentifier.ofUid( CodeGenerator.generateUid() );
+    }
+
 }

@@ -64,8 +64,13 @@ public class Error
         return this;
     }
 
-    public static Optional<Error> error( String message )
+    public static Optional<Error> fail( String message )
     {
         return Optional.of( new Error( message ) );
+    }
+
+    public static Optional<Error> success()
+    {
+        return Optional.empty();
     }
 }

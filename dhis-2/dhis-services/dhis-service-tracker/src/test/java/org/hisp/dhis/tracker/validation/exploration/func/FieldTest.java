@@ -27,7 +27,7 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
 import static org.hisp.dhis.tracker.validation.exploration.func.Field.field;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,8 +49,8 @@ public class FieldTest
         enrollment.setTrackedEntity( "PuBvJxDB73z" );
 
         Validator<String> isValidUid = uid -> {
-            return error( uid ); // to demonstrate that we are getting the
-                                 // trackedEntity field
+            return fail( uid ); // to demonstrate that we are getting the
+                                // trackedEntity field
         };
 
         Validator<Enrollment> validator = field(

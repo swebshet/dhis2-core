@@ -27,58 +27,53 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Each.each;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 import org.hisp.dhis.tracker.domain.Note;
-import org.junit.jupiter.api.Test;
+import org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook;
+import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
 
-class EachTest
+/**
+ * Would replace {@link EnrollmentNoteValidationHook} specifically
+ * {@link ValidationUtils#validateNotes} as it's not concerned with Enrollments
+ * itself.
+ */
+class DuplicateNotesValidator implements Validator<Note>
 {
 
-    @Test
-    void testCalledForEachElementInCollectionPasses()
+    public static Validator<Note> notBeADuplicate()
     {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
-
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> Optional.empty() // no error
-        );
-
-        Optional<Error> error = validator.apply( notes );
-
-        assertFalse( error.isPresent() );
+        return new DuplicateNotesValidator();
     }
 
-    @Test
-    void testCalledForEachElementInCollectionFails()
+    // TODO the interface in step2 is simplified so right now there is not
+    // TrackerBundle/Preheat
+    // see comments in Validator interface
+    @Override
+    public Optional<Error> apply( Note note )
     {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
 
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> fail( n.getValue() ) );
+        // Ignore notes with no UID or no text
+        if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) )
+        {
+            return Optional.empty();
+        }
 
-        Optional<Error> error = validator.apply( notes );
+        // TODO in the original validation we return a warning; my simple
+        // reporter only adds errors; so imagine a call to addWarning()
+        // if we would have the preheat then simply do
+        // if ( bundle.getPreheat().getNote( note.getNote() ).isPresent() )
 
-        assertTrue( error.isPresent() );
-        assertEquals( List.of( "note1", "note2", "note3" ), error.get().getErrors() );
-    }
+        // TODO see above comments. This matches the valid program in our test
+        // just to show how everything fits together
+        if ( "Kj6vYde4LHh".equals( note.getNote() ) )
+        {
+            return fail( "E1119" );
+        }
 
-    private static Note note( String uid, String value )
-    {
-        return Note.builder().note( uid ).value( value ).build();
+        return Optional.empty();
     }
 }

@@ -27,7 +27,7 @@
  */
 package org.hisp.dhis.tracker.validation.exploration.func;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.Error.error;
+import static org.hisp.dhis.tracker.validation.exploration.func.Error.fail;
 import static org.hisp.dhis.tracker.validation.exploration.func.Seq.seq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -87,8 +87,8 @@ class SeqTest
     void testSeqCallsUntilFirstError()
     {
         Validator<Enrollment> validator = seq( Enrollment.class,
-            e -> error( "one" ),
-            e -> error( "two" ) );
+            e -> fail( "one" ),
+            e -> fail( "two" ) );
 
         Optional<Error> error = validator.apply( enrollment );
 
@@ -105,8 +105,8 @@ class SeqTest
                 e -> Optional.empty(), // no error so moving on to the next
                                        // sequence
                 seq( Enrollment.class,
-                    e -> error( "three" ),
-                    e -> error( "four" ) ) ) );
+                    e -> fail( "three" ),
+                    e -> fail( "four" ) ) ) );
 
         Optional<Error> error = validator.apply( enrollment );
 
