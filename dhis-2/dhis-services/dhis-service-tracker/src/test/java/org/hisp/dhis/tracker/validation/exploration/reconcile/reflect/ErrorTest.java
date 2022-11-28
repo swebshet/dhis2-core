@@ -25,57 +25,50 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// https://medium.com/expedia-group-tech/lenses-in-java-2b18c7d24366
-// https://github.com/liquidpie/lenses-java/blob/main/src/main/java/com/vivek/pattern/Lens.java
-public final class Lens<A, B>
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+
+class ErrorTest
 {
 
-    private final Function<A, B> getter;
-
-    private final BiFunction<A, B, A> setter;
-
-    public Lens( final Function<A, B> getter, final BiFunction<A, B, A> setter )
+    @Test
+    void testAppendingError()
     {
-        this.getter = getter;
-        this.setter = setter;
+
+        Error err1 = new Error( "fail1" );
+        Error err2 = new Error( "fail2" );
+
+        Error sum = err1.append( err2, "" );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    public static <A, B> Lens<A, B> of( Function<A, B> getter, BiFunction<A, B, A> setter )
+    @Test
+    void testAppendingOptionalErrorIfPresent()
     {
-        return new Lens<>( getter, setter );
+
+        Error err1 = new Error( "fail1" );
+        Error err2 = new Error( "fail2" );
+
+        Error sum = err1.append( Optional.of( err2 ), "" );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    public B get( final A a )
+    @Test
+    void testAppendingOptionalErrorIfEmpty()
     {
-        return getter.apply( a );
-    }
 
-    public A set( final A a, final B b )
-    {
-        return setter.apply( a, b );
-    }
+        Error err1 = new Error( "fail1" );
 
-    public A mod( final A a, final UnaryOperator<B> unaryOperator )
-    {
-        return set( a, unaryOperator.apply( get( a ) ) );
-    }
+        Error sum = err1.append( Optional.empty(), "" );
 
-    public <C> Lens<C, B> compose( final Lens<C, A> that )
-    {
-        return new Lens<>(
-            c -> get( that.get( c ) ),
-            ( c, b ) -> that.mod( c, a -> set( a, b ) ) );
+        assertEquals( List.of( "fail1" ), sum.getErrors() );
     }
-
-    public <C> Lens<A, C> andThen( final Lens<B, C> that )
-    {
-        return that.compose( this );
-    }
-
 }

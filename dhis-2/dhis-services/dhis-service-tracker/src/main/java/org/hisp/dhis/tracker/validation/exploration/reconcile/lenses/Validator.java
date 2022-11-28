@@ -25,61 +25,20 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
-import lombok.Getter;
-
-@Getter
-public class Error
+@FunctionalInterface
+public interface Validator<T>
 {
-    private final List<String> errors;
-    // TODO so each error String should actually be an error message and a lens
-    // just start with a list for simplicity now
 
-    // private final List<Lens<>> paths;
-
-    // wonder if we should discourage creating an empty Error as we want to
-    // indicate a lack of error with an empty
-    // Optional
-    private Error()
-    {
-        this.errors = new ArrayList<>();
-    }
-
-    public Error( String message )
-    {
-        this.errors = new ArrayList<>();
-        this.errors.add( message );
-    }
-
-    public Error append( Optional<Error> error )
-    {
-        error.ifPresent( this::append );
-        return this;
-    }
-
-    public Error append( Error error )
-    {
-        this.errors.addAll( error.getErrors() );
-        return this;
-    }
-
-    public static <T, S> Optional<Error> fail( Lens<T, S> path, String message )
-    {
-        return Optional.of( new Error( message ) );
-    }
-
-    public static Optional<Error> fail( String message )
-    {
-        return Optional.of( new Error( message ) );
-    }
-
-    public static Optional<Error> succeed()
-    {
-        return Optional.empty();
-    }
+    // TODO the interface in step2 is simplified so right now there is not
+    // TrackerBundle/Preheat this is easy to adjust. Imagine this function is
+    // getting the
+    // boolean apply( ErrorReporter reporter, TrackerBundle bundle, T input );
+    // So we can keep the simplicity of Validators not needing a "context" we
+    // can create a SimpleValidator interface
+    // that implements the Validator interface and just throws a way the bundle
+    Optional<Error> apply( T input );
 }

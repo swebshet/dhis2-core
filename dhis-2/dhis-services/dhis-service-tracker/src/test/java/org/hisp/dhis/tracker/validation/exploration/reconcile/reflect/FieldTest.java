@@ -25,60 +25,70 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Collection;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
-import java.util.Optional;
 
+import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.Note;
 import org.junit.jupiter.api.Test;
 
-class EachTest
+class FieldTest
 {
 
     @Test
-    void testCalledForEachElementInCollectionPasses()
+    void testFieldAddsLens()
+        throws NoSuchFieldException,
+        IllegalAccessException,
+        NoSuchMethodException,
+        InvocationTargetException
     {
+
+        Enrollment enrollment = new Enrollment();
         List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
+            note( "Kj6vYde4LHh", "my duplicate note" ),
+            note( "olfXZzSGacW", "valid note" ),
+            note( "invalid1", "note 1 with invalid uid" ),
+            note( "invalid2", "note 2 with invalid uid" ) );
+        enrollment.setNotes( notes );
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<Collection<Note>> validator = each( Note.class,
-            n -> Optional.empty() // no error
-        );
+        Method getNotes = Enrollment.class.getDeclaredMethod( "getNotes", null );
+        Method getNote = Note.class.getDeclaredMethod( "getNote", null );
+        List<Segment> path = List.of(
+            new Segment( getNotes ),
+            new Segment( List.class.getDeclaredMethod( "get" ), 2 ),
+            new Segment( getNote ) );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( notes );
+        Method method1 = path.get( 0 ).getMethod();
+        Object[] args1 = path.get( 0 ).getArgs();
+        Object res1 = method1.invoke( enrollment, args1 );
 
-        assertFalse( error.isPresent() );
-    }
+        // TODO how can I call the method "get" on res1?
 
-    @Test
-    void testCalledForEachElementInCollectionFails()
-    {
-        List<Note> notes = List.of(
-            note( "Kj6vYde4LHh", "note1" ),
-            note( "olfXZzSGacW", "note2" ),
-            note( "jKLB23QZS4I", "note3" ) );
+        Method method2 = path.get( 1 ).getMethod();
+        Object[] args2 = path.get( 1 ).getArgs();
+        method2.invoke( enrollment, args2 );
 
-        Validator<Collection<Note>> validator = each( Note.class,
-            n -> fail( n.getValue() ) );
+        // Error error = new Error("E1048", new Path(Note.class, "note"));
 
-        Optional<Error> error = validator.apply( notes );
+        Note invalid1 = note( "invalid1", "note 1 with invalid uid" );
+        // List<Note> notes = List.of(invalid1);
 
-        assertTrue( error.isPresent() );
-        assertEquals( List.of( "note1", "note2", "note3" ), error.get().getErrors() );
+        Field field = Note.class.getDeclaredField( "note" );
+        Method method = Note.class.getDeclaredMethod( "getNote", null );
+        // field is private
+        // assertEquals("invalid1", field.get(invalid1));
+        assertEquals( "invalid1", method.invoke( invalid1 ) );
     }
 
     private static Note note( String uid, String value )
     {
         return Note.builder().note( uid ).value( value ).build();
     }
+
 }

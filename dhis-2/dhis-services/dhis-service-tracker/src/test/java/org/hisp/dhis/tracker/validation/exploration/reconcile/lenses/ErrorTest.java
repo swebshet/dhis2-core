@@ -25,56 +25,55 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
-/**
- * Validator applying {@link Validator} to each element in a collection of type
- * T.
- *
- * @param <T> type to validate
- */
-public class Each<T> implements Validator<Collection<T>>
+import org.junit.jupiter.api.Test;
+
+class ErrorTest
 {
 
-    private final Validator<T> validator;
-
-    public Each( Validator<T> validator )
+    @Test
+    void testAppendingError()
     {
-        this.validator = validator;
+
+        Error err1 = new Error(
+            "fail1" );
+        Error err2 = new Error(
+            "fail2" );
+
+        Error sum = err1.append( err2 );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    // TODO if I do not pass the class the compiler does not have enough
-    // information to infer the type. So without it
-    // the client code is working with an Object. Casting on the client could
-    // also work but that's even more awkward.
-    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
+    @Test
+    void testAppendingOptionalErrorIfPresent()
     {
-        return new Each<>( validator );
+
+        Error err1 = new Error(
+            "fail1" );
+        Error err2 = new Error(
+            "fail2" );
+
+        Error sum = err1.append( Optional.of( err2 ) );
+
+        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
     }
 
-    @Override
-    public Optional<Error> apply( Collection<T> input )
+    @Test
+    void testAppendingOptionalErrorIfEmpty()
     {
-        Optional<Error> result = succeed();
 
-        for ( T in : input )
-        {
-            Optional<Error> error = validator.apply( in );
-            if ( result.isPresent() )
-            {
-                result.get().append( error );
-            }
-            else
-            {
-                result = error;
-            }
-        }
+        Error err1 = new Error(
+            "fail1" );
 
-        return result;
+        Error sum = err1.append( Optional.empty() );
+
+        assertEquals( List.of( "fail1" ), sum.getErrors() );
     }
 }

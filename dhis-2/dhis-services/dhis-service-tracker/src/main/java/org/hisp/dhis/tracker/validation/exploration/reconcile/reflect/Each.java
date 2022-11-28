@@ -25,88 +25,65 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
-
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 
-import lombok.RequiredArgsConstructor;
-
 /**
- * Validator applying a sequence of validators in order until a
- * {@link Validator} fails.
+ * Validator applying {@link Validator} to each element in a collection of type
+ * T.
  *
  * @param <T> type to validate
  */
-@RequiredArgsConstructor
-public class Seq<T> implements Validator<T>
+public class Each<T> implements Validator<Collection<T>>
 {
 
-    private final List<Validator<T>> validators;
+    private final Validator<T> validator;
 
-    public Seq( Validator<T> v1 )
+    public Each( Validator<T> validator )
     {
-        this( List.of( v1 ) );
-    }
-
-    public Seq( Validator<T> v1, Validator<T> v2 )
-    {
-        this( List.of( v1, v2 ) );
-    }
-
-    public Seq( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        this( List.of( v1, v2, v3 ) );
-    }
-
-    public Seq( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        this( List.of( v1, v2, v3, v4 ) );
+        this.validator = validator;
     }
 
     // TODO if I do not pass the class the compiler does not have enough
     // information to infer the type. So without it
     // the client code is working with an Object. Casting on the client could
     // also work but that's even more awkward.
-    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1 )
+    public static <T> Each<T> each( Class<T> klass, Validator<T> validator )
     {
-        return new Seq<>( v1 );
-    }
-
-    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2 )
-    {
-        return new Seq<>( v1, v2 );
-    }
-
-    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3 )
-    {
-        return new Seq<>( v1, v2, v3 );
-    }
-
-    public static <T> Seq<T> seq( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
-    {
-        return new Seq<>( v1, v2, v3, v4 );
-    }
-
-    public static <T> Seq<T> seq( Class<T> klass, List<Validator<T>> validators )
-    {
-        return new Seq<>( validators );
+        return new Each<>( validator );
     }
 
     @Override
-    public Optional<Error> apply( T input )
+    public Optional<Error> apply( Collection<T> input )
     {
-        for ( Validator<T> validator : validators )
+        Optional<Error> result = Error.succeed();
+
+        for ( T in : input )
         {
-            Optional<Error> error = validator.apply( input );
-            if ( error.isPresent() )
+            Optional<Error> error = validator.apply( in );
+            if ( result.isPresent() )
             {
-                // only apply next validator if previous one was successful
-                return error;
+                // TODO add index
+                result.get().append( error, "index" );
+            }
+            else
+            {
+                // TODO add index
+                if ( error.isPresent() )
+                {
+                    error.get().getErrors().stream().forEach( e -> {
+                        if ( e.getPath() != null )
+                        {
+                            e.getPath().add( 0, "index" );
+                        }
+                    } );
+                }
+                result = error;
             }
         }
-        return succeed();
+
+        return result;
     }
 }

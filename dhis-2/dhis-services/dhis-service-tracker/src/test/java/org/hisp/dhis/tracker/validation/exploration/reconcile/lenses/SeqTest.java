@@ -25,10 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Seq.seq;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Seq.seq;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -74,11 +74,11 @@ class SeqTest
     @Test
     void testAllAreCalledPass()
     {
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<Enrollment> validator = seq( Enrollment.class,
+        Validator<Enrollment> validator = seq( Enrollment.class,
             e -> Optional.empty(),
             e -> Optional.empty() );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertFalse( error.isPresent() );
     }
@@ -86,11 +86,11 @@ class SeqTest
     @Test
     void testSeqCallsUntilFirstError()
     {
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<Enrollment> validator = seq( Enrollment.class,
+        Validator<Enrollment> validator = seq( Enrollment.class,
             e -> fail( "one" ),
             e -> fail( "two" ) );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
         assertEquals( List.of( "one" ), error.get().getErrors() );

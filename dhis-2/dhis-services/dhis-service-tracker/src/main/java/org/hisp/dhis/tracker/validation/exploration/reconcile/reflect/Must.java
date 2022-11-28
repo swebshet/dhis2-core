@@ -25,32 +25,27 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.EnrollmentValidator.enrollmentValidator;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Error.succeed;
 
-import org.hisp.dhis.tracker.bundle.TrackerBundle;
-import org.hisp.dhis.tracker.domain.Enrollment;
+import java.util.function.Predicate;
 
-/**
- * Shows how we could even build a {@link Validator} for the entire payload from
- * Validators which only know how to validate a specific entity.
- *
- * NOTE: it would not entirely work just yet, just due to the fact that our
- * validations (errors) are flattened and have no link to the field/entity which
- * is invalid. We can explore some ideas on that as well :)
- */
-public class TrackerBundleValidator
+public class Must
 {
 
-    public static Validator<TrackerBundle> validatorForCreate()
+    public static <T> Validator<T> must( Predicate<T> validator, String error )
     {
-        return all( TrackerBundle.class,
-            field( TrackerBundle::getEnrollments,
-                each( Enrollment.class,
-                    enrollmentValidator() ) ) );
+
+        return input -> {
+
+            if ( !validator.test( input ) )
+            {
+                return fail( error );
+            }
+
+            return succeed();
+        };
     }
 }

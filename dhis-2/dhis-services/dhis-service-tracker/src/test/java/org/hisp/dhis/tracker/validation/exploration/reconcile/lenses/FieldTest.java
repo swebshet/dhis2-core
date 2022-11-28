@@ -25,55 +25,66 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Field.field;
+import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
 
+import org.hisp.dhis.common.CodeGenerator;
+import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.Note;
 import org.junit.jupiter.api.Test;
 
-class ErrorTest
+public class FieldTest
 {
 
     @Test
-    void testAppendingError()
+    void testField()
     {
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error err1 = new org.hisp.dhis.tracker.validation.exploration.lenses.Error(
-            "fail1" );
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error err2 = new org.hisp.dhis.tracker.validation.exploration.lenses.Error(
-            "fail2" );
+        Enrollment enrollment = new Enrollment();
+        enrollment.setTrackedEntity( "PuBvJxDB73z" );
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error sum = err1.append( err2 );
+        Validator<String> isValidUid = uid -> {
+            return fail( uid ); // to demonstrate that we are getting the
+                                // trackedEntity field
+        };
 
-        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
+        Validator<Enrollment> validator = field(
+            Enrollment::getTrackedEntity,
+            isValidUid );
+
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertEquals( List.of( "PuBvJxDB73z" ), error.get().getErrors() );
     }
 
     @Test
-    void testAppendingOptionalErrorIfPresent()
+    void testFieldAddsLens()
     {
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error err1 = new org.hisp.dhis.tracker.validation.exploration.lenses.Error(
-            "fail1" );
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error err2 = new org.hisp.dhis.tracker.validation.exploration.lenses.Error(
-            "fail2" );
+        Note invalid1 = note( "invalid1", "note 1 with invalid uid" );
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error sum = err1.append( Optional.of( err2 ) );
+        Validator<Note> noteValidator = field( Note::getNote, CodeGenerator::isValidUid, "E1048" );
 
-        assertEquals( List.of( "fail1", "fail2" ), sum.getErrors() );
+        Optional<Error> error = noteValidator.apply( invalid1 );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1048" ), error.get().getErrors() );
+        // assertEquals( "invalid1",
+        // error.get().getPaths().get(0).get(invalid1));
     }
 
-    @Test
-    void testAppendingOptionalErrorIfEmpty()
+    private static Note note( String uid, String value )
     {
-
-        org.hisp.dhis.tracker.validation.exploration.lenses.Error err1 = new org.hisp.dhis.tracker.validation.exploration.lenses.Error(
-            "fail1" );
-
-        Error sum = err1.append( Optional.empty() );
-
-        assertEquals( List.of( "fail1" ), sum.getErrors() );
+        return Note.builder().note( uid ).value( value ).build();
     }
+
 }

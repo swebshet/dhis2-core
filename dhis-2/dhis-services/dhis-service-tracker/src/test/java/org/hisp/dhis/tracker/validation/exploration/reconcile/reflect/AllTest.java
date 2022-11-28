@@ -25,10 +25,10 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Error.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.program.Program;
@@ -73,11 +74,11 @@ class AllTest
     @Test
     void testAllAreCalledPass()
     {
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<Enrollment> validator = all( Enrollment.class,
+        Validator<Enrollment> validator = all( Enrollment.class,
             e -> Optional.empty(),
             e -> Optional.empty() );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertFalse( error.isPresent() );
     }
@@ -85,14 +86,19 @@ class AllTest
     @Test
     void testAllAreCalledFail()
     {
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<Enrollment> validator = all( Enrollment.class,
+        Validator<Enrollment> validator = all( Enrollment.class,
             e -> fail( "one" ),
             e -> fail( "two" ) );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two" ), error.get().getErrors() );
+        assertEquals( List.of( "one", "two" ), getErrors( error ) );
+    }
+
+    private static List<String> getErrors( Optional<Error> error )
+    {
+        return error.get().getErrors().stream().map( Error.AnnotatedError::getError ).collect( Collectors.toList() );
     }
 
     @Test
@@ -110,7 +116,7 @@ class AllTest
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertEquals( List.of( "one", "two", "three", "four", "five" ), error.get().getErrors() );
+        assertEquals( List.of( "one", "two", "three", "four", "five" ), getErrors( error ) );
     }
 
     private static Enrollment enrollment()

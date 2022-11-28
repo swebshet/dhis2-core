@@ -25,66 +25,66 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
-import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Error.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
-import org.hisp.dhis.common.CodeGenerator;
-import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.Note;
 import org.junit.jupiter.api.Test;
 
-public class FieldTest
+class EachTest
 {
 
     @Test
-    void testField()
+    void testCalledForEachElementInCollectionPasses()
     {
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note1" ),
+            note( "olfXZzSGacW", "note2" ),
+            note( "jKLB23QZS4I", "note3" ) );
 
-        Enrollment enrollment = new Enrollment();
-        enrollment.setTrackedEntity( "PuBvJxDB73z" );
+        Validator<Collection<Note>> validator = each( Note.class,
+            n -> Optional.empty() // no error
+        );
 
-        org.hisp.dhis.tracker.validation.exploration.lenses.Validator<String> isValidUid = uid -> {
-            return fail( uid ); // to demonstrate that we are getting the
-                                // trackedEntity field
-        };
+        Optional<Error> error = validator.apply( notes );
 
-        Validator<Enrollment> validator = field(
-            Enrollment::getTrackedEntity,
-            isValidUid );
-
-        Optional<Error> error = validator.apply( enrollment );
-
-        assertTrue( error.isPresent() );
-        assertEquals( List.of( "PuBvJxDB73z" ), error.get().getErrors() );
+        assertFalse( error.isPresent() );
     }
 
     @Test
-    void testFieldAddsLens()
+    void testCalledForEachElementInCollectionFails()
     {
+        List<Note> notes = List.of(
+            note( "Kj6vYde4LHh", "note1" ),
+            note( "olfXZzSGacW", "note2" ),
+            note( "jKLB23QZS4I", "note3" ) );
 
-        Note invalid1 = note( "invalid1", "note 1 with invalid uid" );
+        Validator<Collection<Note>> validator = each( Note.class,
+            n -> fail( n.getValue() ) );
 
-        Validator<Note> noteValidator = field( Note::getNote, CodeGenerator::isValidUid, "E1048" );
-
-        Optional<Error> error = noteValidator.apply( invalid1 );
+        Optional<Error> error = validator.apply( notes );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1048" ), error.get().getErrors() );
-        // assertEquals( "invalid1",
-        // error.get().getPaths().get(0).get(invalid1));
+        assertEquals( List.of( "note1", "note2", "note3" ), getErrors( error ) );
+    }
+
+    private static List<String> getErrors( Optional<Error> error )
+    {
+        return error.get().getErrors().stream().map( Error.AnnotatedError::getError ).collect( Collectors.toList() );
     }
 
     private static Note note( String uid, String value )
     {
         return Note.builder().note( uid ).value( value ).build();
     }
-
 }

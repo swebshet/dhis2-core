@@ -25,9 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.EnrollmentValidator.enrollmentValidator;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.EnrollmentValidator.enrollmentValidator;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +37,9 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import lombok.NonNull;
 
 import org.hisp.dhis.common.CodeGenerator;
 import org.hisp.dhis.program.Program;
@@ -84,11 +87,12 @@ class EnrollmentValidatorTest
 
         Enrollment enrollment = enrollment();
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertFalse( error.isPresent() );
     }
 
+    // MEETING: show path/lens via this test
     @Test
     void testInvalidEnrollmentWithMultipleErrors()
     {
@@ -105,10 +109,26 @@ class EnrollmentValidatorTest
             note( "invalid1", "note 1 with invalid uid" ),
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
+
+        // assertTrue( error.isPresent() );
+        // assertContainsOnly( List.of( "E1048", "E1048", "E1048", "E1025",
+        // "E1119" ), getErrors(error));
+        error.get().getErrors().forEach( e -> System.out.println( e.getError() + ", path: " + e.getPath() ) );
+    }
+
+    @Test
+    void testInvalidEnrollmentWithTEINull()
+    {
+        Enrollment enrollment = enrollment();
+        // validation error E1122: program not set
+        enrollment.setTrackedEntity( null );
+
+        Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1048", "E1048", "E1048", "E1025", "E1119" ), error.get().getErrors() );
+        error.get().getErrors().forEach( e -> System.out.println( e.getError() + ", path: " + e.getPath() ) );
+        assertContainsOnly( List.of( "E1122" ), getErrors( error ) );
     }
 
     @Test
@@ -120,10 +140,17 @@ class EnrollmentValidatorTest
         // validation error E1069: will not trigger as there is not even a
         // program to check in the preheat
 
-        Optional<org.hisp.dhis.tracker.validation.exploration.lenses.Error> error = validator.apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1122" ), error.get().getErrors() );
+        error.get().getErrors().forEach( e -> System.out.println( e.getError() + ", path: " + e.getPath() ) );
+        assertContainsOnly( List.of( "E1122" ), getErrors( error ) );
+    }
+
+    @NonNull
+    private static List<String> getErrors( Optional<Error> error )
+    {
+        return error.get().getErrors().stream().map( Error.AnnotatedError::getError ).collect( Collectors.toList() );
     }
 
     @Test
@@ -136,7 +163,7 @@ class EnrollmentValidatorTest
         Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1069" ), error.get().getErrors() );
+        assertContainsOnly( List.of( "E1069" ), getErrors( error ) );
     }
 
     private static Note note( String uid, String value )

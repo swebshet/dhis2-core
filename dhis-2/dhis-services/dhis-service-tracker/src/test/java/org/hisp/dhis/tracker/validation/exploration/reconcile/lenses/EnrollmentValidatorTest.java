@@ -25,100 +25,118 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.EnrollmentValidator.enrollmentValidator;
 import static org.hisp.dhis.utils.Assertions.assertContainsOnly;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
 import org.hisp.dhis.common.CodeGenerator;
+import org.hisp.dhis.program.Program;
+import org.hisp.dhis.trackedentitycomment.TrackedEntityComment;
+import org.hisp.dhis.tracker.TrackerIdSchemeParams;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 import org.hisp.dhis.tracker.domain.Note;
+import org.hisp.dhis.tracker.preheat.TrackerPreheat;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class LensTest
+class EnrollmentValidatorTest
 {
     private static final MetadataIdentifier PROGRAM_ID = MetadataIdentifier.ofUid( "MNWZ6hnuhSw" );
 
+    private TrackerPreheat preheat;
+
+    private Validator<Enrollment> validator;
+
+    @BeforeEach
+    void setUp()
+    {
+
+        TrackerIdSchemeParams idSchemes = TrackerIdSchemeParams.builder()
+            .build();
+
+        preheat = mock( TrackerPreheat.class );
+        when( preheat.getIdSchemes() ).thenReturn( idSchemes );
+
+        Program program = new Program();
+        when( preheat.get( Program.class, PROGRAM_ID ) ).thenReturn( program );
+
+        TrackerBundle bundle = TrackerBundle.builder()
+            .preheat( preheat )
+            .build();
+
+        validator = enrollmentValidator();
+    }
+
     @Test
-    void testGetterOfSimpleLens()
+    void testValidEnrollment()
     {
 
         Enrollment enrollment = enrollment();
+
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertFalse( error.isPresent() );
+    }
+
+    @Test
+    void testInvalidEnrollmentWithMultipleErrors()
+    {
+        Enrollment enrollment = enrollment();
+        // error E1048: invalid UID
+        enrollment.setEnrollment( "invalid" );
+        // error E1025: enrolledAt date is null
+        enrollment.setEnrolledAt( null );
+        // error E1119: duplicate note Kj6vYde4LHh
+        when( preheat.getNote( "Kj6vYde4LHh" ) ).thenReturn( Optional.of( new TrackedEntityComment() ) );
         enrollment.setNotes( List.of(
             note( "Kj6vYde4LHh", "my duplicate note" ),
             note( "olfXZzSGacW", "valid note" ),
             note( "invalid1", "note 1 with invalid uid" ),
             note( "invalid2", "note 2 with invalid uid" ) ) );
 
-        // ignoring getters for now
-        Lens<Enrollment, MetadataIdentifier> enrollmentToProgram = Lens.of( Enrollment::getProgram, ( e, id ) -> e );
-        Lens<MetadataIdentifier, String> programToIdentifier = Lens.of( MetadataIdentifier::getIdentifier,
-            ( id, s ) -> id );
-        Lens<Enrollment, String> enrollmentToProgramIdentifier = programToIdentifier.compose( enrollmentToProgram );
-
-        assertEquals( "MNWZ6hnuhSw", enrollmentToProgramIdentifier.get( enrollment ) );
-    }
-
-    @Test
-    void testGetterOfCollectionLens()
-    {
-
-        Enrollment enrollment = enrollment();
-        enrollment.setNotes( List.of(
-            note( "olfXZzSGacW", "valid note" ),
-            note( "Kj6vYde4LHh", "my duplicate note" ),
-            note( "invalid1", "note 1 with invalid uid" ),
-            note( "invalid2", "note 2 with invalid uid" ) ) );
-
-        Lens<Enrollment, List<Note>> enrollmentToNotes = Lens.of( Enrollment::getNotes, ( e, n ) -> e );
-        Lens<List<Note>, Note> notesToSecondNote = Lens.of( notes -> notes.get( 1 ), ( e, n ) -> e );
-        Lens<Enrollment, Note> enrollmentToSecondNote = notesToSecondNote.compose( enrollmentToNotes );
-
-        assertEquals( "Kj6vYde4LHh", enrollmentToSecondNote.get( enrollment ).getNote() );
-    }
-
-    @Test
-    void testLensToGetInvalidNotesFromEnrollment()
-    {
-        Enrollment enrollment = enrollment();
-        Note invalid1 = note("invalid1", "note 1 with invalid uid");
-        enrollment.setNotes( List.of(
-            note( "Kj6vYde4LHh", "my duplicate note" ),
-            note( "olfXZzSGacW", "valid note" ),
-                invalid1,
-            note( "invalid2", "note 2 with invalid uid" ) ) );
-
-        Optional<Error> error = noteValidator().apply( invalid1 );
-        // TODO end goal is validating a top level thing and getting a lens into the deeply nested thing where to error
-        // originated
-//        Optional<Error> error = enrollmentValidator().apply( enrollment );
+        Optional<Error> error = validator.apply( enrollment );
 
         assertTrue( error.isPresent() );
-        assertContainsOnly( List.of( "E1048" ), error.get().getErrors() );
+        assertContainsOnly( List.of( "E1048", "E1048", "E1048", "E1025", "E1119" ), error.get().getErrors() );
     }
 
-    private static Validator<Enrollment> enrollmentValidator()
+    @Test
+    void testInvalidEnrollmentWithProgramNull()
     {
-        return all( Enrollment.class,
-            field( Enrollment::getNotes,
-                each( Note.class, noteValidator() ) ) );
+        Enrollment enrollment = enrollment();
+        // validation error E1122: program not set
+        enrollment.setProgram( MetadataIdentifier.EMPTY_UID );
+        // validation error E1069: will not trigger as there is not even a
+        // program to check in the preheat
+
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1122" ), error.get().getErrors() );
     }
 
-    private static Validator<Note> noteValidator()
+    @Test
+    void testInvalidEnrollmentWithProgramNotFound()
     {
-        return all( Note.class,
-            field( Note::getNote, CodeGenerator::isValidUid, "E1048" ) // PreCheckUidValidationHook
-        // notBeADuplicate()
-        );
+        Enrollment enrollment = enrollment();
+        // validation error E1069: program not found
+        enrollment.setProgram( uid() );
+
+        Optional<Error> error = validator.apply( enrollment );
+
+        assertTrue( error.isPresent() );
+        assertContainsOnly( List.of( "E1069" ), error.get().getErrors() );
     }
 
     private static Note note( String uid, String value )
@@ -141,4 +159,5 @@ class LensTest
     {
         return MetadataIdentifier.ofUid( CodeGenerator.generateUid() );
     }
+
 }

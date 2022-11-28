@@ -25,14 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.DuplicateNotesValidator.notBeADuplicate;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Field.field;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Must.must;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Seq.seq;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.DuplicateNotesValidator.notBeADuplicate;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Field.field;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Must.must;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Seq.seq;
 
 import java.util.Objects;
 
@@ -48,7 +48,7 @@ public class EnrollmentValidator
     {
         return all( Enrollment.class,
             uidsAreValid(),
-            must( e -> e.getOrgUnit().isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
+            field( Enrollment::getOrgUnit, o -> o.isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
             field( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
             field( Enrollment::getProgram,
                 seq( MetadataIdentifier.class,

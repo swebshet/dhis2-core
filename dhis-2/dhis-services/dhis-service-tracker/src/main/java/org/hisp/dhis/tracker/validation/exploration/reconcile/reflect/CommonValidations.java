@@ -25,56 +25,56 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
-
-import java.util.Optional;
-
-import org.hisp.dhis.tracker.domain.Note;
-import org.hisp.dhis.tracker.validation.hooks.EnrollmentNoteValidationHook;
-import org.hisp.dhis.tracker.validation.hooks.ValidationUtils;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 
 /**
- * Would replace {@link EnrollmentNoteValidationHook} specifically
- * {@link ValidationUtils} validateNotes as it's not concerned with Enrollments
- * itself.
+ * It's easy to create common {@link Validator}s or predicates that we can reuse
+ * across our different entities.
  */
-class DuplicateNotesValidator implements Validator<Note>
+class CommonValidations
 {
 
-    public static Validator<Note> notBeADuplicate()
+    public static boolean notBeBlank( MetadataIdentifier id )
     {
-        return new DuplicateNotesValidator();
+        if ( id == null )
+        {
+            return false;
+        }
+
+        return id.isNotBlank();
     }
 
     // TODO the interface in step2 is simplified so right now there is not
     // TrackerBundle/Preheat
-    // see comments in Validator interface
-    @Override
-    public Optional<Error> apply( Note note )
+    // this is easy to adjust. Imagine this function is getting the
+    // TrackerBundle/Preheat
+    // TrackerPreheat preheat = bundle.getPreheat();
+    // public static boolean programInPreheat(TrackerBundle bundle,
+    // ErrorReporter reporter, MetadataIdentifier id )
+    public static boolean beInPreheat( MetadataIdentifier id )
     {
 
-        // Ignore notes with no UID or no text
-        if ( isEmpty( note.getNote() ) || isEmpty( note.getValue() ) )
-        {
-            return succeed();
-        }
-
-        // TODO in the original validation we return a warning; my simple
-        // reporter only adds errors; so imagine a call to addWarning()
-        // if we would have the preheat then simply do
-        // if ( bundle.getPreheat().getNote( note.getNote() ).isPresent() )
+        // TODO rough example of how it could look like with access to the
+        // preheat
+        // If we find a way to make this more generic or fit in with the other
+        // functions we could extract the
+        // class. Its a common pattern to check for existance so a function like
+        //
+        // Program p = preheat.get( Program.class, id );
+        // if ( p == null )
+        // {
+        // return error( preheat.getIdSchemes(), E1069, id );
+        // }
 
         // TODO see above comments. This matches the valid program in our test
         // just to show how everything fits together
-        if ( "Kj6vYde4LHh".equals( note.getNote() ) )
+        if ( !id.equals( MetadataIdentifier.ofUid( "MNWZ6hnuhSw" ) ) )
         {
-            return fail( "E1119" );
+            return false;
         }
 
-        return succeed();
+        return true;
     }
 }

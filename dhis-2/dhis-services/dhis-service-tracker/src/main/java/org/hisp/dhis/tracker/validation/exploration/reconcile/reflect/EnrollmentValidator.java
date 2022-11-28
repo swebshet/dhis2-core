@@ -25,14 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.func;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.func.All.all;
-import static org.hisp.dhis.tracker.validation.exploration.func.DuplicateNotesValidator.notBeADuplicate;
-import static org.hisp.dhis.tracker.validation.exploration.func.Each.each;
-import static org.hisp.dhis.tracker.validation.exploration.func.Field.field;
-import static org.hisp.dhis.tracker.validation.exploration.func.Must.must;
-import static org.hisp.dhis.tracker.validation.exploration.func.Seq.seq;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.DuplicateNotesValidator.notBeADuplicate;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Field.field;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Must.must;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Seq.seq;
 
 import java.util.Objects;
 
@@ -47,8 +47,8 @@ public class EnrollmentValidator
     public static Validator<Enrollment> enrollmentValidator()
     {
         return all( Enrollment.class,
-            containValidUids(),
-            field( Enrollment::getOrgUnit, MetadataIdentifier::isNotBlank, "E1122" ), // PreCheckMandatoryFieldsValidationHook
+            uidsAreValid(),
+            field( Enrollment::getOrgUnit, o -> o.isNotBlank(), "E1122" ), // PreCheckMandatoryFieldsValidationHook
             field( Enrollment::getTrackedEntity, StringUtils::isNotEmpty, "E1122" ), // PreCheckMetaValidationHook
             field( Enrollment::getProgram,
                 seq( MetadataIdentifier.class,
@@ -61,7 +61,7 @@ public class EnrollmentValidator
                     noteValidator() ) ) );
     }
 
-    public static Validator<Enrollment> containValidUids()
+    public static Validator<Enrollment> uidsAreValid()
     {
         // just an example showing that we can group validators into reusable
         // pieces

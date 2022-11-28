@@ -25,9 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.reflect;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.reflect.Error.succeed;
 
 import java.util.List;
 import java.util.Optional;
@@ -44,42 +44,47 @@ import lombok.RequiredArgsConstructor;
 public class All<T> implements Validator<T>
 {
 
+    // TODO added this field just to illustrate how a path can easily be built
+    private final Class<T> klass;
+
     private final List<Validator<T>> validators;
 
-    public All( Validator<T> v1 )
+    public All( Class<T> klass, Validator<T> v1 )
     {
-        this( List.of( v1 ) );
+        this( klass, List.of( v1 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2 )
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2 )
     {
-        this( List.of( v1, v2 ) );
+        this( klass, List.of( v1, v2 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3 )
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3 )
     {
-        this( List.of( v1, v2, v3 ) );
+        this( klass, List.of( v1, v2, v3 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
     {
-        this( List.of( v1, v2, v3, v4 ) );
+        this( klass, List.of( v1, v2, v3, v4 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5 )
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5 )
     {
-        this( List.of( v1, v2, v3, v4, v5 ) );
+        this( klass, List.of( v1, v2, v3, v4, v5 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5, Validator<T> v6 )
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5,
+        Validator<T> v6 )
     {
-        this( List.of( v1, v2, v3, v4, v5, v6 ) );
+        this( klass, List.of( v1, v2, v3, v4, v5, v6 ) );
     }
 
-    public All( Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5, Validator<T> v6,
+    public All( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4, Validator<T> v5,
+        Validator<T> v6,
         Validator<T> v7 )
     {
-        this( List.of( v1, v2, v3, v4, v5, v6, v7 ) );
+        this( klass, List.of( v1, v2, v3, v4, v5, v6, v7 ) );
     }
 
     // TODO if I do not pass the class the compiler does not have enough
@@ -88,45 +93,45 @@ public class All<T> implements Validator<T>
     // also work but that's even more awkward.
     public static <T> All<T> all( Class<T> klass, Validator<T> v1 )
     {
-        return new All<>( v1 );
+        return new All<>( klass, v1 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2 )
     {
-        return new All<>( v1, v2 );
+        return new All<>( klass, v1, v2 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3 )
     {
-        return new All<>( v1, v2, v3 );
+        return new All<>( klass, v1, v2, v3 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4 )
     {
-        return new All<>( v1, v2, v3, v4 );
+        return new All<>( klass, v1, v2, v3, v4 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
         Validator<T> v5 )
     {
-        return new All<>( v1, v2, v3, v4, v5 );
+        return new All<>( klass, v1, v2, v3, v4, v5 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
         Validator<T> v5, Validator<T> v6 )
     {
-        return new All<>( v1, v2, v3, v4, v5, v6 );
+        return new All<>( klass, v1, v2, v3, v4, v5, v6 );
     }
 
     public static <T> All<T> all( Class<T> klass, Validator<T> v1, Validator<T> v2, Validator<T> v3, Validator<T> v4,
         Validator<T> v5, Validator<T> v6, Validator<T> v7 )
     {
-        return new All<>( v1, v2, v3, v4, v5, v6, v7 );
+        return new All<>( klass, v1, v2, v3, v4, v5, v6, v7 );
     }
 
     public static <T> All<T> all( Class<T> klass, List<Validator<T>> validators )
     {
-        return new All<>( validators );
+        return new All<>( klass, validators );
     }
 
     @Override
@@ -139,10 +144,19 @@ public class All<T> implements Validator<T>
             Optional<Error> error = validator.apply( input );
             if ( result.isPresent() )
             {
-                result.get().append( error );
+                result.get().append( error, klass.toString() );
             }
             else
             {
+                if ( error.isPresent() )
+                {
+                    error.get().getErrors().stream().forEach( e -> {
+                        if ( e.getPath() != null )
+                        {
+                            e.getPath().add( 0, klass.toString() );
+                        }
+                    } );
+                }
                 result = error;
             }
         }

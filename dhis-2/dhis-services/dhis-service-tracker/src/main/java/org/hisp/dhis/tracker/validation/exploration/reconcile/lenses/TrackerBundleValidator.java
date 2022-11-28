@@ -25,36 +25,31 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.validation.exploration.lenses;
+package org.hisp.dhis.tracker.validation.exploration.reconcile.lenses;
 
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.fail;
-import static org.hisp.dhis.tracker.validation.exploration.lenses.Error.succeed;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.All.all;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.Each.each;
+import static org.hisp.dhis.tracker.validation.exploration.reconcile.lenses.EnrollmentValidator.enrollmentValidator;
 
-import java.util.function.Function;
-import java.util.function.Predicate;
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
+import org.hisp.dhis.tracker.domain.Enrollment;
 
-public class Field
+/**
+ * Shows how we could even build a {@link Validator} for the entire payload from
+ * Validators which only know how to validate a specific entity.
+ *
+ * NOTE: it would not entirely work just yet, just due to the fact that our
+ * validations (errors) are flattened and have no link to the field/entity which
+ * is invalid. We can explore some ideas on that as well :)
+ */
+public class TrackerBundleValidator
 {
 
-    public static <T, S> Validator<T> field( Function<T, S> map, Validator<S> validator )
+    public static Validator<TrackerBundle> validatorForCreate()
     {
-        return input -> {
-            // TODO compose Lens.of(map, null) with whatever lens we have in the Optional<Error>
-            return validator.apply( map.apply( input ) );
-        };
-    }
-
-    public static <T, S> Validator<T> field( Function<T, S> map, Predicate<S> validator, String error )
-    {
-        return input -> {
-
-            if ( !validator.test( map.apply( input ) ) )
-            {
-                // ignore setters for now
-                return fail(Lens.of(map, null), error );
-            }
-
-            return succeed();
-        };
+        return all( TrackerBundle.class,
+            Field.field( TrackerBundle::getEnrollments,
+                each( Enrollment.class,
+                    enrollmentValidator() ) ) );
     }
 }
