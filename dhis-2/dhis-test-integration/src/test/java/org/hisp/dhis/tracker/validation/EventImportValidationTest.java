@@ -96,6 +96,33 @@ class EventImportValidationTest extends TrackerTest
     }
 
     @Test
+    void showRemoveOnErrorFlaw()
+        throws IOException
+    {
+        // TODO(DHIS2-14213) enrollment will not be in the bundle after the
+        // validation by PreCheckUidValidationHook
+        // since the enrollment.orgUnit is not a UID and
+        // PreCheckUidValidationHook having removeOnError=true
+        // it is removed from the bundle by AbstractTrackerDtoValidationHook
+        TrackerImportReport trackerImportReport = trackerImportService
+            .importTracker( fromJson( "tracker/validations/invalid_enrollment_with_valid_event.json" ) );
+
+        // the errors are
+        // org.opentest4j.AssertionFailedError: Expected import with status OK,
+        // instead got:
+        // E1070: Could not find OrganisationUnit: `wrong`, linked to
+        // Enrollment.
+        // E1079: Event: `ZwwuwNp6gVd`, program: `E8o1E9tAppy` is different from
+        // program defined in enrollment `zNWZ6hnuhSw`.
+        // E1079 is wrong as the program is actually the same in the payload for
+        // enrollment and event.program
+        // Its just that we could not get the enrollment.program in the
+        // PreCheckDataRelationsValidationHook.getEnrollmentProgramFromEvent
+        // as the enrollment was removed from the bundle
+        assertNoErrors( trackerImportReport );
+    }
+
+    @Test
     void failValidationWhenTrackedEntityAttributeHasWrongOptionValue()
         throws IOException
     {

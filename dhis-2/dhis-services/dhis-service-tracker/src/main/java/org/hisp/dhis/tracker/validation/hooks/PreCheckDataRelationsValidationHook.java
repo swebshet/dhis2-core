@@ -404,6 +404,13 @@ public class PreCheckDataRelationsValidationHook
                 .getReference( event.getEnrollment() );
             if ( reference.isPresent() )
             {
+                // TODO(DHIS2-14213) enrollment will not be in the bundle if it
+                // was already identified as invalid by a
+                // previous hook like PreCheckUidValidationHook (for example if
+                // the enrollment.orgUnit is not a UID)
+                // due to that and the validation hook having removeOnError=true
+                // it is removed from the bundle by
+                // AbstractTrackerDtoValidationHook
                 final Optional<Enrollment> enrollment = bundle.getEnrollment( event.getEnrollment() );
                 if ( enrollment.isPresent() )
                 {
