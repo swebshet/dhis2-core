@@ -50,7 +50,7 @@ import org.hisp.dhis.tracker.validation.ValidationFailFastException;
 @Value
 // TODO: should this be "ValidationReporter" since it does not only report
 // errors ?
-public class ValidationErrorReporter
+public class ValidationErrorReporter implements Reporter
 {
     private final List<TrackerErrorReport> reportList;
 
