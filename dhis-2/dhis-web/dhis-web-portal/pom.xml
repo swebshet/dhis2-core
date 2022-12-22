@@ -65,7 +65,22 @@
                         <labels>
                             <DHIS2_VERSION>${project.version}</DHIS2_VERSION>
                         </labels>
+                        <entrypoint>/usr/local/bin/docker-entrypoint.sh</entrypoint>
                     </container>
+                    <extraDirectories>
+<!--                        <paths>-->
+<!--                            <path>-->
+<!--                                <from>src/main/resources/docker-entrypoint.sh</from>-->
+<!--                                <into>/usr/local/bin/docker-entrypoint.sh</into>-->
+<!--                            </path>-->
+<!--                        </paths>-->
+                        <permissions>
+                            <permission>
+                                <file>/usr/local/bin/docker-entrypoint.sh</file>
+                                <mode>755</mode>
+                            </permission>
+                        </permissions>
+                    </extraDirectories>
                     <pluginExtensions>
                         <pluginExtension>
                             <implementation>com.google.cloud.tools.jib.maven.extension.ownership.JibOwnershipExtension</implementation>
