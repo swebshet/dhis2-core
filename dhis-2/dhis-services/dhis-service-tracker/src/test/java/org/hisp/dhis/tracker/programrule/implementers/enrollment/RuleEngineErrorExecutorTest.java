@@ -36,53 +36,46 @@ import java.util.Optional;
 import org.hisp.dhis.DhisConvenienceTest;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
-import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith( MockitoExtension.class )
 class RuleEngineErrorExecutorTest extends DhisConvenienceTest
 {
-    private final static String RULE_ENROLLMENT_ID = "Rule_enrollment_id";
+    private final static String RULE_ID = "Rule_id";
 
-    private final static String ENROLLMENT_ERROR_MESSAGE = "Enrollment error message";
+    private final static String ERROR_MESSAGE = "Error message";
 
     private final static String ENROLLMENT_ID = "EnrollmentUid";
 
     private final static String TEI_ID = "TeiId";
 
-    private final RuleEngineErrorExecutor ruleEngineErrorExecutor = new RuleEngineErrorExecutor( RULE_ENROLLMENT_ID,
-        ENROLLMENT_ERROR_MESSAGE );
+    private final RuleEngineErrorExecutor ruleEngineErrorExecutor = new RuleEngineErrorExecutor( RULE_ID,
+        ERROR_MESSAGE );
 
     private TrackerBundle bundle;
-
-    @Mock
-    private TrackerPreheat preheat;
 
     @BeforeEach
     void setUpTest()
     {
         bundle = TrackerBundle.builder().build();
-        bundle.setPreheat( preheat );
     }
 
     @Test
-    void testValidateEnrollmentWithError()
+    void shouldReturnAWarningWhenRuleWithSyntaxErrorIsTriggeredOnEnrollment()
     {
-        Optional<ProgramRuleIssue> warning = ruleEngineErrorExecutor.executeEnrollmentRuleAction( bundle,
-            getEnrollment() );
+        Optional<ProgramRuleIssue> warning = ruleEngineErrorExecutor.executeRuleAction( bundle, getEnrollment() );
 
         assertTrue( warning.isPresent() );
         warning.ifPresent( w -> {
             assertEquals( WARNING, w.getIssueType() );
-            assertEquals( RULE_ENROLLMENT_ID, w.getRuleUid() );
+            assertEquals( RULE_ID, w.getRuleUid() );
             assertEquals( ValidationCode.E1300, w.getIssueCode() );
-            assertEquals( ENROLLMENT_ERROR_MESSAGE, w.getArgs().get( 0 ) );
+            assertEquals( ERROR_MESSAGE, w.getArgs().get( 0 ) );
         } );
 
     }

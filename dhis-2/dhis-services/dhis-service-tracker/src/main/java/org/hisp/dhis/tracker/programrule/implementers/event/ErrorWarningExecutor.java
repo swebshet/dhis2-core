@@ -25,85 +25,63 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule.implementers;
+package org.hisp.dhis.tracker.programrule.implementers.event;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.hisp.dhis.event.EventStatus;
-import org.hisp.dhis.rules.models.*;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Event;
-import org.hisp.dhis.tracker.programrule.*;
+import org.hisp.dhis.tracker.programrule.IssueType;
+import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 
 import com.google.common.collect.Lists;
 
 /**
- * This implementer check if there are errors or warnings the
+ * This executor checks if there are errors or warnings in the
  * {@link TrackerBundle}
  *
  * @Author Enrico Colasante
  */
-public abstract class ErrorWarningImplementer<T extends RuleActionMessage>
-    extends AbstractRuleActionImplementer<T>
-    implements RuleActionImplementer
+public interface ErrorWarningExecutor extends RuleActionExecutor<Event>
 {
-    public abstract boolean isOnComplete();
+    boolean isOnComplete();
 
-    public abstract IssueType getIssueType();
+    IssueType getIssueType();
 
-    @Override
-    public String getField( RuleActionMessage ruleAction )
-    {
-        return ruleAction.field();
-    }
-
-    @Override
-    public String getContent( RuleActionMessage ruleAction )
-    {
-        return ruleAction.content();
-    }
-
-    @Override
-    public List<ProgramRuleIssue> applyToEvents( Event event, List<EventActionRule> actionRules,
-        TrackerBundle bundle )
+    default Optional<ProgramRuleIssue> validateEvent( ErrorWarningRuleAction errorRuleAction,
+        Event event )
     {
         if ( needsToRun( event ) )
         {
-            return parseErrors( actionRules );
+            return Optional.of( parseErrors( errorRuleAction ) );
         }
-        return Collections.emptyList();
+        return Optional.empty();
     }
 
-    private <U extends ActionRule> List<ProgramRuleIssue> parseErrors( List<U> effects )
+    private ProgramRuleIssue parseErrors( ErrorWarningRuleAction ruleAction )
     {
-        return effects
-            .stream()
-            .map( actionRule -> {
-                String field = actionRule.getField();
-                String content = actionRule.getContent();
-                String data = actionRule.getData();
 
-                StringBuilder stringBuilder = new StringBuilder( content );
-                if ( !StringUtils.isEmpty( data ) )
-                {
-                    stringBuilder.append( " " ).append( data );
-                }
-                if ( !StringUtils.isEmpty( field ) )
-                {
-                    stringBuilder.append( " (" ).append( field ).append( ")" );
-                }
+        String field = ruleAction.getField();
+        String content = ruleAction.getContent();
+        String data = ruleAction.getData();
 
-                return Pair.of( actionRule.getRuleUid(), stringBuilder.toString() );
-            } )
-            .map( message -> new ProgramRuleIssue( message.getKey(), ValidationCode.E1300,
-                Lists.newArrayList( message.getValue() ), getIssueType() ) )
-            .collect( Collectors.toList() );
+        StringBuilder stringBuilder = new StringBuilder( content );
+        if ( !StringUtils.isEmpty( data ) )
+        {
+            stringBuilder.append( " " ).append( data );
+        }
+        if ( !StringUtils.isEmpty( field ) )
+        {
+            stringBuilder.append( " (" ).append( field ).append( ")" );
+        }
+
+        return new ProgramRuleIssue( ruleAction.getRuleUid(), ValidationCode.E1300,
+            Lists.newArrayList( stringBuilder.toString() ), getIssueType() );
     }
 
     private boolean needsToRun( Event event )

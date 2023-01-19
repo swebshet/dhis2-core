@@ -31,11 +31,14 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hisp.dhis.event.EventStatus;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.EnrollmentStatus;
+import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 
 import com.google.common.collect.Lists;
@@ -46,18 +49,18 @@ import com.google.common.collect.Lists;
  *
  * @Author Enrico Colasante
  */
-public interface ErrorWarningExecutor extends RuleActionExecutor
+public interface ErrorWarningExecutor extends RuleActionExecutor<Enrollment>
 {
     boolean isOnComplete();
 
     IssueType getIssueType();
 
-    default Optional<ProgramRuleIssue> validateEnrollment( ErrorWarningRuleAction erroRuleAction,
+    default Optional<ProgramRuleIssue> validateEnrollment( ErrorWarningRuleAction ruleAction,
         Enrollment enrollment )
     {
         if ( needsToRun( enrollment ) )
         {
-            return Optional.of( parseErrors( erroRuleAction ) );
+            return Optional.of( parseErrors( ruleAction ) );
         }
         return Optional.empty();
     }
@@ -88,6 +91,18 @@ public interface ErrorWarningExecutor extends RuleActionExecutor
         if ( isOnComplete() )
         {
             return Objects.equals( EnrollmentStatus.COMPLETED, enrollment.getStatus() );
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private boolean needsToRun( Event event )
+    {
+        if ( isOnComplete() )
+        {
+            return Objects.equals( EventStatus.COMPLETED, event.getStatus() );
         }
         else
         {

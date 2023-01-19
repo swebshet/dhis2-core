@@ -25,15 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule.implementers;
+package org.hisp.dhis.tracker.programrule.implementers.event;
 
-import static org.hisp.dhis.rules.models.AttributeType.DATA_ELEMENT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.hisp.dhis.DhisConvenienceTest;
@@ -42,9 +41,7 @@ import org.hisp.dhis.event.EventStatus;
 import org.hisp.dhis.program.ProgramStage;
 import org.hisp.dhis.program.ProgramStageDataElement;
 import org.hisp.dhis.program.ValidationStrategy;
-import org.hisp.dhis.rules.models.RuleAction;
-import org.hisp.dhis.rules.models.RuleActionSetMandatoryField;
-import org.hisp.dhis.rules.models.RuleEffect;
+import org.hisp.dhis.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.tracker.TrackerIdSchemeParam;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
@@ -65,25 +62,28 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 @ExtendWith( MockitoExtension.class )
-class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
+class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
 {
-    private final static String FIRST_EVENT_ID = "EventUid";
+    private final static String ACTIVE_EVENT_ID = "EventUid";
 
-    private final static String SECOND_EVENT_ID = "CompletedEventUid";
+    private final static String COMPLETED_EVENT_ID = "CompletedEventUid";
 
     private final static String DATA_ELEMENT_ID = "DataElementId";
 
     private final static String DATA_ELEMENT_VALUE = "1.0";
 
-    private static ProgramStage firstProgramStage;
+    private final static String ATTRIBUTE_VALUE = "23.0";
 
-    private static ProgramStage secondProgramStage;
+    private final static String RULE_UID = "Rule uid";
 
-    private static DataElement dataElementA;
+    private static ProgramStage programStage;
 
-    private static DataElement dataElementB;
+    private static DataElement dataElement;
 
-    private final SetMandatoryFieldValidator implementerToTest = new SetMandatoryFieldValidator();
+    private TrackedEntityAttribute attribute;
+
+    private final SetMandatoryFieldExecutor mandatoryFieldExecutor = new SetMandatoryFieldExecutor( RULE_UID,
+        DATA_ELEMENT_ID );
 
     private TrackerBundle bundle;
 
@@ -93,19 +93,13 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
     @BeforeEach
     void setUpTest()
     {
-        firstProgramStage = createProgramStage( 'A', 0 );
-        firstProgramStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
-        dataElementA = createDataElement( 'A' );
-        dataElementA.setUid( DATA_ELEMENT_ID );
-        ProgramStageDataElement programStageDataElementA = createProgramStageDataElement( firstProgramStage,
-            dataElementA, 0 );
-        firstProgramStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementA ) );
-        secondProgramStage = createProgramStage( 'B', 0 );
-        secondProgramStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
-        dataElementB = createDataElement( 'B' );
-        ProgramStageDataElement programStageDataElementB = createProgramStageDataElement( secondProgramStage,
-            dataElementB, 0 );
-        secondProgramStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementB ) );
+        programStage = createProgramStage( 'A', 0 );
+        programStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
+        dataElement = createDataElement( 'A' );
+        dataElement.setUid( DATA_ELEMENT_ID );
+        ProgramStageDataElement programStageDataElementA = createProgramStageDataElement( programStage,
+            dataElement, 0 );
+        programStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementA ) );
 
         bundle = TrackerBundle.builder().build();
         bundle.setPreheat( preheat );
@@ -115,15 +109,15 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
     void testValidateOkMandatoryFieldsForEvents()
     {
         when( preheat.getIdSchemes() ).thenReturn( TrackerIdSchemeParams.builder().build() );
-        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElementA );
-        when( preheat.getProgramStage( MetadataIdentifier.ofUid( firstProgramStage ) ) )
-            .thenReturn( firstProgramStage );
+        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
+        when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
+            .thenReturn( programStage );
         bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet() ) );
 
-        List<ProgramRuleIssue> errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(),
+        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet() );
 
-        assertTrue( errors.isEmpty() );
+        assertTrue( error.isEmpty() );
     }
 
     @Test
@@ -133,70 +127,47 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
             .dataElementIdScheme( TrackerIdSchemeParam.CODE )
             .build();
         when( preheat.getIdSchemes() ).thenReturn( idSchemes );
-        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElementA );
-        when( preheat.getProgramStage( MetadataIdentifier.ofUid( firstProgramStage ) ) )
-            .thenReturn( firstProgramStage );
+        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
+        when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
+            .thenReturn( programStage );
         bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet( idSchemes ) ) );
 
-        List<ProgramRuleIssue> errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(),
+        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet( idSchemes ) );
 
-        assertTrue( errors.isEmpty() );
+        assertTrue( error.isEmpty() );
     }
 
     @Test
     void testValidateWithErrorMandatoryFieldsForEvents()
     {
         when( preheat.getIdSchemes() ).thenReturn( TrackerIdSchemeParams.builder().build() );
-        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElementA );
-        when( preheat.getProgramStage( MetadataIdentifier.ofUid( firstProgramStage ) ) )
-            .thenReturn( firstProgramStage );
+        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
+        when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
+            .thenReturn( programStage );
         bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet(), getEventWithMandatoryValueNOTSet() ) );
 
-        List<ProgramRuleIssue> errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(),
+        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet() );
-        assertTrue( errors.isEmpty() );
+        assertTrue( error.isEmpty() );
 
-        errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(), getEventWithMandatoryValueNOTSet() );
+        error = mandatoryFieldExecutor.executeRuleAction( bundle, getEventWithMandatoryValueNOTSet() );
 
-        assertFalse( errors.isEmpty() );
-        errors.forEach( e -> {
-            assertEquals( "RULE_DATA_VALUE", e.getRuleUid() );
+        assertFalse( error.isEmpty() );
+        error.ifPresent( e -> {
+            assertEquals( RULE_UID, e.getRuleUid() );
             assertEquals( ValidationCode.E1301, e.getIssueCode() );
             assertEquals( IssueType.ERROR, e.getIssueType() );
-            assertEquals( Lists.newArrayList( dataElementA.getUid() ), e.getArgs() );
+            assertEquals( Lists.newArrayList( dataElement.getUid() ), e.getArgs() );
         } );
-    }
-
-    @Test
-    void testValidateOkMandatoryFieldsForValidEventAndNotValidEventInDifferentProgramStage()
-    {
-        when( preheat.getIdSchemes() ).thenReturn( TrackerIdSchemeParams.builder().build() );
-        when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElementA );
-        when( preheat.getProgramStage( MetadataIdentifier.ofUid( firstProgramStage ) ) )
-            .thenReturn( firstProgramStage );
-        when( preheat.getProgramStage( MetadataIdentifier.ofUid( secondProgramStage ) ) )
-            .thenReturn( secondProgramStage );
-        bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet(),
-            getEventWithMandatoryValueNOTSetInDifferentProgramStage() ) );
-
-        List<ProgramRuleIssue> errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(),
-            getEventWithMandatoryValueSet() );
-
-        assertTrue( errors.isEmpty() );
-
-        errors = implementerToTest.validateEvent( bundle, getRuleEventEffects(),
-            getEventWithMandatoryValueNOTSetInDifferentProgramStage() );
-
-        assertTrue( errors.isEmpty() );
     }
 
     private Event getEventWithMandatoryValueSet( TrackerIdSchemeParams idSchemes )
     {
         return Event.builder()
-            .event( FIRST_EVENT_ID )
+            .event( ACTIVE_EVENT_ID )
             .status( EventStatus.ACTIVE )
-            .programStage( idSchemes.toMetadataIdentifier( firstProgramStage ) )
+            .programStage( idSchemes.toMetadataIdentifier( programStage ) )
             .dataValues( getActiveEventDataValues( idSchemes ) )
             .build();
     }
@@ -204,9 +175,9 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
     private Event getEventWithMandatoryValueSet()
     {
         return Event.builder()
-            .event( FIRST_EVENT_ID )
+            .event( ACTIVE_EVENT_ID )
             .status( EventStatus.ACTIVE )
-            .programStage( MetadataIdentifier.ofUid( firstProgramStage ) )
+            .programStage( MetadataIdentifier.ofUid( programStage ) )
             .dataValues( getActiveEventDataValues() )
             .build();
     }
@@ -214,18 +185,9 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
     private Event getEventWithMandatoryValueNOTSet()
     {
         Event event = new Event();
-        event.setEvent( SECOND_EVENT_ID );
+        event.setEvent( COMPLETED_EVENT_ID );
         event.setStatus( EventStatus.ACTIVE );
-        event.setProgramStage( MetadataIdentifier.ofUid( firstProgramStage ) );
-        return event;
-    }
-
-    private Event getEventWithMandatoryValueNOTSetInDifferentProgramStage()
-    {
-        Event event = new Event();
-        event.setEvent( SECOND_EVENT_ID );
-        event.setStatus( EventStatus.ACTIVE );
-        event.setProgramStage( MetadataIdentifier.ofUid( secondProgramStage ) );
+        event.setProgramStage( MetadataIdentifier.ofUid( programStage ) );
         return event;
     }
 
@@ -233,7 +195,7 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
     {
         DataValue dataValue = DataValue.builder()
             .value( DATA_ELEMENT_VALUE )
-            .dataElement( idSchemes.toMetadataIdentifier( dataElementA ) )
+            .dataElement( idSchemes.toMetadataIdentifier( dataElement ) )
             .build();
         return Sets.newHashSet( dataValue );
     }
@@ -245,12 +207,5 @@ class SetMandatoryFieldValidatorTest extends DhisConvenienceTest
             .dataElement( MetadataIdentifier.ofUid( DATA_ELEMENT_ID ) )
             .build();
         return Sets.newHashSet( dataValue );
-    }
-
-    private List<RuleEffect> getRuleEventEffects()
-    {
-        RuleAction ruleActionSetMandatoryDataValue = RuleActionSetMandatoryField.create( DATA_ELEMENT_ID,
-            DATA_ELEMENT );
-        return Lists.newArrayList( RuleEffect.create( "RULE_DATA_VALUE", ruleActionSetMandatoryDataValue ) );
     }
 }

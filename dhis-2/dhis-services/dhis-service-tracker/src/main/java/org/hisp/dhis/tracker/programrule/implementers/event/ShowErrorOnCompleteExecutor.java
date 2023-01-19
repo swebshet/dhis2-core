@@ -25,20 +25,52 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule.implementers.enrollment;
+package org.hisp.dhis.tracker.programrule.implementers.event;
+
+import static org.hisp.dhis.tracker.programrule.IssueType.ERROR;
 
 import java.util.Optional;
 
+import lombok.RequiredArgsConstructor;
+
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
-import org.hisp.dhis.tracker.domain.Enrollment;
+import org.hisp.dhis.tracker.domain.Event;
+import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 
-public interface RuleActionExecutor
+/**
+ * This executor shows errors on a completed enrollment or event calculated by
+ * Rule Engine.
+ *
+ * @Author Enrico Colasante
+ */
+@RequiredArgsConstructor
+public class ShowErrorOnCompleteExecutor
+    implements ErrorWarningExecutor
 {
-    /**
-     * Execute rule action on given enrollment
-     *
-     * @return list of issues
-     */
-    Optional<ProgramRuleIssue> executeEnrollmentRuleAction( TrackerBundle bundle, Enrollment enrollment );
+    private final ErrorWarningRuleAction ruleAction;
+
+    @Override
+    public boolean isOnComplete()
+    {
+        return true;
+    }
+
+    @Override
+    public IssueType getIssueType()
+    {
+        return ERROR;
+    }
+
+    @Override
+    public String getField()
+    {
+        return ruleAction.getField();
+    }
+
+    @Override
+    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Event event )
+    {
+        return validateEvent( ruleAction, event );
+    }
 }

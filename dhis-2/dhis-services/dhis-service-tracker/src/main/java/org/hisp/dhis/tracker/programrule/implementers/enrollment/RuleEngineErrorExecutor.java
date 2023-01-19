@@ -35,6 +35,7 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 
 import com.google.common.collect.Lists;
@@ -45,14 +46,20 @@ import com.google.common.collect.Lists;
  * @Author Enrico Colasante
  */
 @RequiredArgsConstructor
-public class RuleEngineErrorExecutor implements RuleActionExecutor
+public class RuleEngineErrorExecutor implements RuleActionExecutor<Enrollment>
 {
     private final String ruleUid;
 
     private final String error;
 
     @Override
-    public Optional<ProgramRuleIssue> executeEnrollmentRuleAction( TrackerBundle bundle, Enrollment enrollment )
+    public String getField()
+    {
+        return null;
+    }
+
+    @Override
+    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Enrollment enrollment )
     {
         return Optional.of(
             new ProgramRuleIssue( ruleUid, ValidationCode.E1300,

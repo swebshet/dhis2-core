@@ -74,7 +74,9 @@ class DefaultProgramRuleService
 
     private final TrackerConverterService<Attribute, TrackedEntityAttributeValue> attributeValueTrackerConverterService;
 
-    private final RuleActionMapper ruleActionMapper;
+    private final RuleActionEnrollmentMapper ruleActionEnrollmentMapper;
+
+    private final RuleActionEventMapper ruleActionEventMapper;
 
     @Override
     @Transactional( readOnly = true )
@@ -90,7 +92,9 @@ class DefaultProgramRuleService
         bundle.setRuleEffects( ruleEffects );
 
         // These are needed for rule engine validation
-        bundle.setEnrollmentRuleActionExecutors( ruleActionMapper.mapEnrollmentRuleActions( ruleEffects, bundle ) );
+        bundle.setEnrollmentRuleActionExecutors(
+            ruleActionEnrollmentMapper.mapEnrollmentRuleActions( ruleEffects, bundle ) );
+        bundle.setEventRuleActionExecutors( ruleActionEventMapper.mapEventRuleActions( ruleEffects, bundle ) );
     }
 
     private List<RuleEffects> calculateEnrollmentRuleEffects( TrackerBundle bundle, TrackerPreheat preheat )

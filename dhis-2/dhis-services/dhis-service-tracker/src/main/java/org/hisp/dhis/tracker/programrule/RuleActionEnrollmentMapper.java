@@ -50,9 +50,9 @@ import org.hisp.dhis.tracker.domain.Attribute;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.TrackedEntity;
 import org.hisp.dhis.tracker.domain.TrackerDto;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.AssignValueExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.ErrorWarningRuleAction;
-import org.hisp.dhis.tracker.programrule.implementers.enrollment.RuleActionExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.RuleEngineErrorExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.SetMandatoryFieldExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.ShowErrorExecutor;
@@ -65,11 +65,12 @@ import com.google.common.collect.Lists;
 
 @Service
 @RequiredArgsConstructor
-class RuleActionMapper
+class RuleActionEnrollmentMapper
 {
     private final SystemSettingManager systemSettingManager;
 
-    public Map<TrackerDto, List<RuleActionExecutor>> mapEnrollmentRuleActions( List<RuleEffects> ruleEffects,
+    public Map<TrackerDto, List<RuleActionExecutor<Enrollment>>> mapEnrollmentRuleActions(
+        List<RuleEffects> ruleEffects,
         TrackerBundle bundle )
     {
         List<RuleEffects> filteredEffects = filterEnrollments( ruleEffects, bundle );
@@ -84,7 +85,7 @@ class RuleActionMapper
             .collect( Collectors.toList() );
     }
 
-    private Map<TrackerDto, List<RuleActionExecutor>> mapEnrollmentEffects( List<RuleEffects> ruleEffects,
+    private Map<TrackerDto, List<RuleActionExecutor<Enrollment>>> mapEnrollmentEffects( List<RuleEffects> ruleEffects,
         TrackerBundle bundle )
     {
         return ruleEffects
@@ -94,7 +95,8 @@ class RuleActionMapper
                     bundle ) ) );
     }
 
-    private List<RuleActionExecutor> mapEnrollmentRuleActions( Enrollment enrollment, RuleEffects ruleEffects,
+    private List<RuleActionExecutor<Enrollment>> mapEnrollmentRuleActions( Enrollment enrollment,
+        RuleEffects ruleEffects,
         TrackerBundle bundle )
     {
         List<Attribute> payloadTeiAttributes = bundle.findTrackedEntityByUid( enrollment.getTrackedEntity() )
@@ -112,7 +114,8 @@ class RuleActionMapper
             .collect( Collectors.toList() );
     }
 
-    private RuleActionExecutor buildEnrollmentRuleActionExecutor( String ruleId, String data, RuleAction ruleAction,
+    private RuleActionExecutor<Enrollment> buildEnrollmentRuleActionExecutor( String ruleId, String data,
+        RuleAction ruleAction,
         List<Attribute> attributes )
     {
         if ( ruleAction instanceof RuleActionAssign )

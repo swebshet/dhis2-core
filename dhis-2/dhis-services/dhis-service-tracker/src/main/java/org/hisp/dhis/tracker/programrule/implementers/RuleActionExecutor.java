@@ -25,23 +25,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule;
+package org.hisp.dhis.tracker.programrule.implementers;
 
-import java.util.List;
+import java.util.Optional;
 
-import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
-import org.hisp.dhis.tracker.domain.Event;
+import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 
-/**
- * @author Enrico Colasante
- */
-public interface RuleActionImplementer
+public interface RuleActionExecutor<T>
 {
+    String getField();
+
     /**
-     * Get the validation for event evaluated by rule engine
+     * Execute rule action on given enrollment
      *
-     * @return A map of events and list of issues
+     * @return list of issues
      */
-    List<ProgramRuleIssue> validateEvent( TrackerBundle bundle, List<RuleEffect> ruleEffects, Event event );
+    Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, T entity );
 }

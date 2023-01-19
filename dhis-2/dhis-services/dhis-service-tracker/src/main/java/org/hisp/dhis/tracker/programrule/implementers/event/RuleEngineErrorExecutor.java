@@ -25,38 +25,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule.implementers;
+package org.hisp.dhis.tracker.programrule.implementers.event;
 
-import static org.hisp.dhis.tracker.programrule.IssueType.ERROR;
+import java.util.Optional;
 
-import org.hisp.dhis.rules.models.RuleActionShowError;
+import lombok.RequiredArgsConstructor;
+
+import org.hisp.dhis.tracker.bundle.TrackerBundle;
+import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.programrule.IssueType;
-import org.springframework.stereotype.Component;
+import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
+import org.hisp.dhis.tracker.validation.ValidationCode;
+
+import com.google.common.collect.Lists;
 
 /**
- * This implementer show errors calculated by Rule Engine.
+ * This executor log as a warning any error raised by rule engine execution
  *
  * @Author Enrico Colasante
  */
-@Component
-public class ShowErrorValidator
-    extends ErrorWarningImplementer<RuleActionShowError>
+@RequiredArgsConstructor
+public class RuleEngineErrorExecutor implements RuleActionExecutor<Event>
 {
+    private final String ruleUid;
+
+    private final String error;
+
     @Override
-    public Class<RuleActionShowError> getActionClass()
+    public String getField()
     {
-        return RuleActionShowError.class;
+        return null;
     }
 
     @Override
-    public boolean isOnComplete()
+    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Event event )
     {
-        return false;
-    }
-
-    @Override
-    public IssueType getIssueType()
-    {
-        return ERROR;
+        return Optional.of(
+            new ProgramRuleIssue( ruleUid, ValidationCode.E1300,
+                Lists.newArrayList( error ), IssueType.WARNING ) );
     }
 }

@@ -36,10 +36,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.hisp.dhis.DhisConvenienceTest;
-import org.hisp.dhis.dataelement.DataElement;
-import org.hisp.dhis.program.ProgramStage;
-import org.hisp.dhis.program.ProgramStageDataElement;
-import org.hisp.dhis.program.ValidationStrategy;
 import org.hisp.dhis.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.tracker.TrackerIdSchemeParam;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
@@ -59,7 +55,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 @ExtendWith( MockitoExtension.class )
 class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
@@ -67,8 +62,6 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
     private final static String ACTIVE_ENROLLMENT_ID = "ActiveEnrollmentUid";
 
     private final static String COMPLETED_ENROLLMENT_ID = "CompletedEnrollmentUid";
-
-    private final static String DATA_ELEMENT_ID = "DataElementId";
 
     private final static String ATTRIBUTE_ID = "AttributeId";
 
@@ -78,17 +71,11 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
 
     private final static String ATTRIBUTE_VALUE = "23.0";
 
-    private static ProgramStage firstProgramStage;
-
-    private static ProgramStage secondProgramStage;
-
-    private static DataElement dataElementA;
-
-    private static DataElement dataElementB;
+    private final static String RULE_UID = "Rule uid";
 
     private TrackedEntityAttribute attribute;
 
-    private final SetMandatoryFieldExecutor enrollmentValidatorToTest = new SetMandatoryFieldExecutor( "RULE_ATTRIBUTE",
+    private final SetMandatoryFieldExecutor enrollmentValidatorToTest = new SetMandatoryFieldExecutor( RULE_UID,
         ATTRIBUTE_ID );
 
     private TrackerBundle bundle;
@@ -99,20 +86,6 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
     @BeforeEach
     void setUpTest()
     {
-        firstProgramStage = createProgramStage( 'A', 0 );
-        firstProgramStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
-        dataElementA = createDataElement( 'A' );
-        dataElementA.setUid( DATA_ELEMENT_ID );
-        ProgramStageDataElement programStageDataElementA = createProgramStageDataElement( firstProgramStage,
-            dataElementA, 0 );
-        firstProgramStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementA ) );
-        secondProgramStage = createProgramStage( 'B', 0 );
-        secondProgramStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
-        dataElementB = createDataElement( 'B' );
-        ProgramStageDataElement programStageDataElementB = createProgramStageDataElement( secondProgramStage,
-            dataElementB, 0 );
-        secondProgramStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementB ) );
-
         attribute = createTrackedEntityAttribute( 'A' );
         attribute.setUid( ATTRIBUTE_ID );
         attribute.setCode( ATTRIBUTE_CODE );
@@ -128,7 +101,7 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
         when( preheat.getTrackedEntityAttribute( ATTRIBUTE_ID ) ).thenReturn( attribute );
         bundle.setEnrollments( Lists.newArrayList( getEnrollmentWithMandatoryAttributeSet() ) );
 
-        Optional<ProgramRuleIssue> error = enrollmentValidatorToTest.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = enrollmentValidatorToTest.executeRuleAction( bundle,
             getEnrollmentWithMandatoryAttributeSet() );
 
         assertFalse( error.isPresent() );
@@ -144,7 +117,7 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
         when( preheat.getTrackedEntityAttribute( ATTRIBUTE_ID ) ).thenReturn( attribute );
         bundle.setEnrollments( Lists.newArrayList( getEnrollmentWithMandatoryAttributeSet( idSchemes ) ) );
 
-        Optional<ProgramRuleIssue> errors = enrollmentValidatorToTest.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> errors = enrollmentValidatorToTest.executeRuleAction( bundle,
             getEnrollmentWithMandatoryAttributeSet( idSchemes ) );
 
         assertFalse( errors.isPresent() );
@@ -158,18 +131,18 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
         bundle.setEnrollments( Lists.newArrayList( getEnrollmentWithMandatoryAttributeSet(),
             getEnrollmentWithMandatoryAttributeNOTSet() ) );
 
-        Optional<ProgramRuleIssue> error = enrollmentValidatorToTest.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = enrollmentValidatorToTest.executeRuleAction( bundle,
             getEnrollmentWithMandatoryAttributeSet() );
 
         assertFalse( error.isPresent() );
 
-        error = enrollmentValidatorToTest.executeEnrollmentRuleAction( bundle,
+        error = enrollmentValidatorToTest.executeRuleAction( bundle,
             getEnrollmentWithMandatoryAttributeNOTSet() );
 
         assertTrue( error.isPresent() );
 
         error.ifPresent( e -> {
-            assertEquals( "RULE_ATTRIBUTE", e.getRuleUid() );
+            assertEquals( RULE_UID, e.getRuleUid() );
             assertEquals( ValidationCode.E1306, e.getIssueCode() );
             assertEquals( IssueType.ERROR, e.getIssueType() );
             assertEquals( Lists.newArrayList( ATTRIBUTE_ID ), e.getArgs() );

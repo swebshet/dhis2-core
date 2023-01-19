@@ -25,18 +25,26 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.tracker.programrule.implementers.enrollment;
+package org.hisp.dhis.tracker.programrule.implementers.event;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.hisp.dhis.DhisConvenienceTest;
+import org.hisp.dhis.dataelement.DataElement;
+import org.hisp.dhis.event.EventStatus;
+import org.hisp.dhis.program.ProgramStage;
+import org.hisp.dhis.program.ProgramStageDataElement;
+import org.hisp.dhis.program.ValidationStrategy;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.EnrollmentStatus;
+import org.hisp.dhis.tracker.domain.Event;
+import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
@@ -49,6 +57,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 @MockitoSettings( strictness = Strictness.LENIENT )
 @ExtendWith( MockitoExtension.class )
@@ -62,6 +71,16 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     private final static String ACTIVE_ENROLLMENT_ID = "ActiveEnrollmentUid";
 
     private final static String COMPLETED_ENROLLMENT_ID = "CompletedEnrollmentUid";
+
+    private final static String ACTIVE_EVENT_ID = "EventUid";
+
+    private final static String COMPLETED_EVENT_ID = "CompletedEventUid";
+
+    private final static String PROGRAM_STAGE_ID = "ProgramStageId";
+
+    private final static String DATA_ELEMENT_ID = "DataElementId";
+
+    private final static String ANOTHER_DATA_ELEMENT_ID = "AnotherDataElementId";
 
     private ShowWarningOnCompleteExecutor warningOnCompleteExecutor = new ShowWarningOnCompleteExecutor(
         getErrorActionRule() );
@@ -78,55 +97,69 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     @Mock
     private TrackerPreheat preheat;
 
+    private ProgramStage programStage;
+
+    private ProgramStage anotherProgramStage;
+
     @BeforeEach
     void setUpTest()
     {
+        programStage = createProgramStage( 'A', 0 );
+        programStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
+        DataElement dataElementA = createDataElement( 'A' );
+        dataElementA.setUid( DATA_ELEMENT_ID );
+        ProgramStageDataElement programStageDataElementA = createProgramStageDataElement( programStage, dataElementA,
+            0 );
+        programStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementA ) );
+        anotherProgramStage = createProgramStage( 'B', 0 );
+        anotherProgramStage.setValidationStrategy( ValidationStrategy.ON_UPDATE_AND_INSERT );
+        DataElement dataElementB = createDataElement( 'B' );
+        dataElementB.setUid( ANOTHER_DATA_ELEMENT_ID );
+        ProgramStageDataElement programStageDataElementB = createProgramStageDataElement( anotherProgramStage,
+            dataElementB, 0 );
+        anotherProgramStage.setProgramStageDataElements( Sets.newHashSet( programStageDataElementB ) );
+        when( preheat.getProgramStage( MetadataIdentifier.ofUid( PROGRAM_STAGE_ID ) ) ).thenReturn( programStage );
+
         bundle = TrackerBundle.builder().build();
         bundle.setEnrollments( getEnrollments() );
         bundle.setPreheat( preheat );
     }
 
     @Test
-    void testValidateShowErrorRuleActionForEnrollment()
+    void testValidateShowErrorRuleActionForEvents()
     {
-        Optional<ProgramRuleIssue> error = showErrorExecutor.executeRuleAction( bundle, activeEnrollment() );
-        assertTrue( error.isPresent() );
+        Optional<ProgramRuleIssue> error = showErrorExecutor.executeRuleAction( bundle, activeEvent() );
+        assertFalse( error.isEmpty() );
 
-        error = showErrorExecutor.executeRuleAction( bundle, completedEnrollment() );
-        assertTrue( error.isPresent() );
+        showErrorExecutor.executeRuleAction( bundle, completedEvent() );
+        assertFalse( error.isEmpty() );
     }
 
     @Test
-    void testValidateShowWarningRuleActionForEnrollment()
+    void testValidateShowWarningRuleActionForEvents()
     {
-        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeRuleAction( bundle,
-            activeEnrollment() );
-        assertTrue( warning.isPresent() );
+        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeRuleAction( bundle, activeEvent() );
+        assertFalse( warning.isEmpty() );
 
-        warning = showWarningExecutor.executeRuleAction( bundle, completedEnrollment() );
-        assertTrue( warning.isPresent() );
+        warning = showWarningExecutor.executeRuleAction( bundle, completedEvent() );
+        assertFalse( warning.isEmpty() );
     }
 
     @Test
-    void testValidateShowErrorOnCompleteRuleActionForEnrollment()
+    void testValidateShowErrorOnCompleteRuleActionForEvents()
     {
-        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeRuleAction( bundle,
-            activeEnrollment() );
-        assertFalse( error.isPresent() );
+        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeRuleAction( bundle, activeEvent() );
+        assertTrue( error.isEmpty() );
 
-        error = errorOnCompleteExecutor.executeRuleAction( bundle, completedEnrollment() );
-        assertTrue( error.isPresent() );
+        error = errorOnCompleteExecutor.executeRuleAction( bundle, completedEvent() );
+        assertFalse( error.isEmpty() );
     }
 
     @Test
-    void testValidateShowWarningOnCompleteRuleActionForEnrollment()
+    void testValidateShowWarningOnCompleteRuleActionForEvents()
     {
-        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeRuleAction( bundle,
-            activeEnrollment() );
-        assertFalse( warning.isPresent() );
-
-        warning = warningOnCompleteExecutor.executeRuleAction( bundle, completedEnrollment() );
-        assertTrue( warning.isPresent() );
+        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeRuleAction( bundle, completedEvent() );
+        assertFalse( warning.isEmpty() );
     }
 
     private List<Enrollment> getEnrollments()
@@ -153,5 +186,28 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     private ErrorWarningRuleAction getErrorActionRule()
     {
         return new ErrorWarningRuleAction( "", EVALUATED_DATA, null, IssueType.ERROR.name() + CONTENT );
+    }
+
+    private List<Event> getEvents()
+    {
+        return Lists.newArrayList( activeEvent(), completedEvent() );
+    }
+
+    private Event activeEvent()
+    {
+        Event activeEvent = new Event();
+        activeEvent.setEvent( ACTIVE_EVENT_ID );
+        activeEvent.setStatus( EventStatus.ACTIVE );
+        activeEvent.setProgramStage( MetadataIdentifier.ofUid( PROGRAM_STAGE_ID ) );
+        return activeEvent;
+    }
+
+    private Event completedEvent()
+    {
+        Event completedEvent = new Event();
+        completedEvent.setEvent( COMPLETED_EVENT_ID );
+        completedEvent.setStatus( EventStatus.COMPLETED );
+        completedEvent.setProgramStage( MetadataIdentifier.ofUid( PROGRAM_STAGE_ID ) );
+        return completedEvent;
     }
 }
