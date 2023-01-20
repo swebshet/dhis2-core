@@ -27,6 +27,7 @@
  */
 package org.hisp.dhis.analytics.event.data;
 
+import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.joinWith;
@@ -193,7 +194,7 @@ public abstract class AbstractAnalyticsService
         addMetadata( params, periodKeywords, grid );
 
         // ---------------------------------------------------------------------
-        // Data ID scheme
+        // ID scheme
         // ---------------------------------------------------------------------
 
         if ( params.hasDataIdScheme() )
@@ -201,15 +202,19 @@ public abstract class AbstractAnalyticsService
             substituteData( grid );
         }
 
-        maybeApplyIdScheme( params, grid );
+        applyIdScheme( params, grid );
 
         // ---------------------------------------------------------------------
         // Paging
         // ---------------------------------------------------------------------
 
-        maybeApplyPaging( params, count, grid );
+        addPaging( params, count, grid );
 
-        maybeApplyHeaders( params, grid );
+        // ---------------------------------------------------------------------
+        // Headers
+        // ---------------------------------------------------------------------
+
+        addHeaders( params, grid );
 
         return grid;
     }
@@ -222,7 +227,7 @@ public abstract class AbstractAnalyticsService
      * @param params the {@link EventQueryParams}.
      * @param grid the {@link Grid}.
      */
-    void maybeApplyIdScheme( EventQueryParams params, Grid grid )
+    void applyIdScheme( EventQueryParams params, Grid grid )
     {
         if ( !params.isSkipMeta() && params.hasCustomIdSchemaSet() )
         {
@@ -237,7 +242,7 @@ public abstract class AbstractAnalyticsService
      * @param totalCount the total count.
      * @param grid the {@link Grid}.
      */
-    private void maybeApplyPaging( EventQueryParams params, long totalCount, Grid grid )
+    private void addPaging( EventQueryParams params, long totalCount, Grid grid )
     {
         if ( params.isPaging() )
         {
@@ -278,7 +283,7 @@ public abstract class AbstractAnalyticsService
      * @param params the {@link EventQueryParams}.
      * @param grid the {@link Grid}.
      */
-    private void maybeApplyHeaders( EventQueryParams params, Grid grid )
+    private void addHeaders( EventQueryParams params, Grid grid )
     {
         if ( params.hasHeaders() )
         {
@@ -541,7 +546,10 @@ public abstract class AbstractAnalyticsService
             }
             else
             {
-                dimensionItems.put( item.getItemId(), List.of( item.getFiltersAsString() ) );
+                dimensionItems.put( item.getItemId(),
+                    item.getFiltersAsString() != null
+                        ? List.of( item.getFiltersAsString() )
+                        : emptyList() );
             }
         }
 

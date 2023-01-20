@@ -43,12 +43,8 @@ import org.hisp.dhis.tracker.domain.Attribute;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 import org.hisp.dhis.tracker.domain.TrackedEntity;
-import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
-import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor assigns a value to a field if it is empty, otherwise returns an
@@ -57,7 +53,7 @@ import com.google.common.collect.Lists;
  * @Author Enrico Colasante
  */
 @RequiredArgsConstructor
-public class AssignValueExecutor implements RuleActionExecutor<Enrollment>
+public class AssignValueExecutor implements RuleActionExecutor
 {
     private final SystemSettingManager systemSettingManager;
 
@@ -65,22 +61,16 @@ public class AssignValueExecutor implements RuleActionExecutor<Enrollment>
 
     private final String value;
 
-    private final String fieldUid;
+    private final String attributeUid;
 
     private final List<Attribute> attributes;
 
     @Override
-    public String getField()
-    {
-        return fieldUid;
-    }
-
-    @Override
-    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Enrollment enrollment )
+    public Optional<ProgramRuleIssue> executeEnrollmentRuleAction( TrackerBundle bundle, Enrollment enrollment )
     {
         Boolean canOverwrite = systemSettingManager
             .getBooleanSetting( SettingKey.RULE_ENGINE_ASSIGN_OVERWRITE );
-        TrackedEntityAttribute attribute = bundle.getPreheat().getTrackedEntityAttribute( fieldUid );
+        TrackedEntityAttribute attribute = bundle.getPreheat().getTrackedEntityAttribute( attributeUid );
 
         Optional<Attribute> payloadAttribute = attributes.stream()
             .filter( at -> at.getAttribute().isEqualTo( attribute ) )
@@ -91,15 +81,12 @@ public class AssignValueExecutor implements RuleActionExecutor<Enrollment>
             isEqual( value, payloadAttribute.get().getValue(), attribute.getValueType() ) )
         {
             addOrOverwriteAttribute( enrollment, bundle );
-            return Optional.of( new ProgramRuleIssue( ruleUid, ValidationCode.E1310,
-                Lists.newArrayList( fieldUid, value ),
-                IssueType.WARNING ) );
+            return Optional.of( ProgramRuleIssue.warning( ruleUid, ValidationCode.E1310, attributeUid, value ) );
         }
         else
         {
-            return Optional.of( new ProgramRuleIssue( ruleUid, ValidationCode.E1309,
-                Lists.newArrayList( fieldUid, enrollment.getEnrollment() ),
-                IssueType.ERROR ) );
+            return Optional.of(
+                ProgramRuleIssue.error( ruleUid, ValidationCode.E1309, attributeUid, enrollment.getEnrollment() ) );
         }
     }
 
@@ -128,7 +115,7 @@ public class AssignValueExecutor implements RuleActionExecutor<Enrollment>
 
     private void addOrOverwriteAttribute( Enrollment enrollment, TrackerBundle bundle )
     {
-        TrackedEntityAttribute attribute = bundle.getPreheat().getTrackedEntityAttribute( fieldUid );
+        TrackedEntityAttribute attribute = bundle.getPreheat().getTrackedEntityAttribute( attributeUid );
         Optional<TrackedEntity> trackedEntity = bundle.findTrackedEntityByUid( enrollment.getTrackedEntity() );
 
         if ( trackedEntity.isPresent() )

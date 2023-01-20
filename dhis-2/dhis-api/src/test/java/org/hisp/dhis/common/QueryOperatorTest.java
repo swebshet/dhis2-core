@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,14 +27,24 @@
  */
 package org.hisp.dhis.common;
 
-/**
- * @author Lars Helge Overland
- */
-public class MaintenanceModeException
-    extends RuntimeException
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+class QueryOperatorTest
 {
-    public MaintenanceModeException( String message )
+    @Test
+    void testIsType()
     {
-        super( message );
+        assertTrue( QueryOperator.LIKE.isLike() );
+        assertTrue( QueryOperator.NLIKE.isLike() );
+        assertTrue( QueryOperator.EQ.isEqualTo() );
+        assertTrue( QueryOperator.IEQ.isEqualTo() );
+
+        assertFalse( QueryOperator.LIKE.isEqualTo() );
+        assertFalse( QueryOperator.GT.isEqualTo() );
+        assertFalse( QueryOperator.LT.isLike() );
+        assertFalse( QueryOperator.EQ.isLike() );
     }
 }

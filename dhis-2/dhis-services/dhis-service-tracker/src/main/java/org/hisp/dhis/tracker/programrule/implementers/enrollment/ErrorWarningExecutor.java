@@ -31,17 +31,12 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.hisp.dhis.event.EventStatus;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.EnrollmentStatus;
-import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
-import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor checks if there are errors or warnings in the
@@ -49,7 +44,7 @@ import com.google.common.collect.Lists;
  *
  * @Author Enrico Colasante
  */
-public interface ErrorWarningExecutor extends RuleActionExecutor<Enrollment>
+public interface ErrorWarningExecutor extends RuleActionExecutor
 {
     boolean isOnComplete();
 
@@ -60,30 +55,36 @@ public interface ErrorWarningExecutor extends RuleActionExecutor<Enrollment>
     {
         if ( needsToRun( enrollment ) )
         {
-            return Optional.of( parseErrors( ruleAction ) );
+            return mapToIssue( ruleAction );
         }
         return Optional.empty();
     }
 
-    private ProgramRuleIssue parseErrors( ErrorWarningRuleAction ruleAction )
+    private Optional<ProgramRuleIssue> mapToIssue( ErrorWarningRuleAction ruleAction )
     {
-
-        String field = ruleAction.getField();
-        String content = ruleAction.getContent();
+        StringBuilder validationMessage = new StringBuilder( ruleAction.getContent() );
         String data = ruleAction.getData();
-
-        StringBuilder stringBuilder = new StringBuilder( content );
         if ( !StringUtils.isEmpty( data ) )
         {
-            stringBuilder.append( " " ).append( data );
+            validationMessage.append( " " ).append( data );
         }
+        String field = ruleAction.getField();
         if ( !StringUtils.isEmpty( field ) )
         {
-            stringBuilder.append( " (" ).append( field ).append( ")" );
+            validationMessage.append( " (" ).append( field ).append( ")" );
         }
 
-        return new ProgramRuleIssue( ruleAction.getRuleUid(), ValidationCode.E1300,
-            Lists.newArrayList( stringBuilder.toString() ), getIssueType() );
+        switch ( getIssueType() )
+        {
+        case WARNING:
+            return Optional.of( ProgramRuleIssue.warning( ruleAction.getRuleUid(), ValidationCode.E1300,
+                validationMessage.toString() ) );
+        case ERROR:
+            return Optional.of(
+                ProgramRuleIssue.error( ruleAction.getRuleUid(), ValidationCode.E1300, validationMessage.toString() ) );
+        default:
+            return Optional.empty();
+        }
     }
 
     private boolean needsToRun( Enrollment enrollment )
@@ -92,21 +93,6 @@ public interface ErrorWarningExecutor extends RuleActionExecutor<Enrollment>
         {
             return Objects.equals( EnrollmentStatus.COMPLETED, enrollment.getStatus() );
         }
-        else
-        {
-            return true;
-        }
-    }
-
-    private boolean needsToRun( Event event )
-    {
-        if ( isOnComplete() )
-        {
-            return Objects.equals( EventStatus.COMPLETED, event.getStatus() );
-        }
-        else
-        {
-            return true;
-        }
+        return true;
     }
 }

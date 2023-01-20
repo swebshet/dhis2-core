@@ -39,8 +39,8 @@ import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 
 /**
- * This executor shows errors on a completed enrollment or event calculated by
- * Rule Engine.
+ * This executor shows errors on a completed enrollment calculated by Rule
+ * Engine.
  *
  * @Author Enrico Colasante
  */
@@ -63,13 +63,7 @@ public class ShowErrorOnCompleteExecutor
     }
 
     @Override
-    public String getField()
-    {
-        return ruleAction.getField();
-    }
-
-    @Override
-    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Enrollment enrollment )
+    public Optional<ProgramRuleIssue> executeEnrollmentRuleAction( TrackerBundle bundle, Enrollment enrollment )
     {
         return validateEnrollment( ruleAction, enrollment );
     }
