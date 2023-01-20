@@ -51,7 +51,6 @@ import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
 import org.hisp.dhis.rules.models.RuleEffects;
 import org.hisp.dhis.setting.SystemSettingManager;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
-import org.hisp.dhis.tracker.domain.Attribute;
 import org.hisp.dhis.tracker.domain.DataValue;
 import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.domain.TrackerDto;
@@ -66,15 +65,13 @@ import org.hisp.dhis.tracker.programrule.implementers.event.ShowWarningExecutor;
 import org.hisp.dhis.tracker.programrule.implementers.event.ShowWarningOnCompleteExecutor;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
-
-@Service
+@Service( "org.hisp.dhis.tracker.programrule.RuleActionEnrollmentMapper" )
 @RequiredArgsConstructor
 class RuleActionEventMapper
 {
     private final SystemSettingManager systemSettingManager;
 
-    public Map<TrackerDto, List<RuleActionExecutor<Event>>> mapEventRuleActions( List<RuleEffects> ruleEffects,
+    public Map<TrackerDto, List<RuleActionExecutor<Event>>> mapRuleEffects( List<RuleEffects> ruleEffects,
         TrackerBundle bundle )
     {
         List<RuleEffects> filteredEffects = filterEvents( ruleEffects, bundle );
@@ -95,11 +92,11 @@ class RuleActionEventMapper
         return ruleEffects
             .stream()
             .collect( Collectors.toMap( e -> bundle.findEventByUid( e.getTrackerObjectUid() ).get(),
-                e -> mapEventRuleActions( bundle.findEventByUid( e.getTrackerObjectUid() ).get(), e,
+                e -> mapRuleEffects( bundle.findEventByUid( e.getTrackerObjectUid() ).get(), e,
                     bundle ) ) );
     }
 
-    private List<RuleActionExecutor<Event>> mapEventRuleActions( Event event, RuleEffects ruleEffects,
+    private List<RuleActionExecutor<Event>> mapRuleEffects( Event event, RuleEffects ruleEffects,
         TrackerBundle bundle )
     {
         ProgramStage programStage = bundle.getPreheat().getProgramStage( event.getProgramStage() );
@@ -157,14 +154,6 @@ class RuleActionEventMapper
             return new RuleEngineErrorExecutor( ruleId, data );
         }
         return null;
-    }
-
-    private List<Attribute> mergeAttributes( List<Attribute> enrollmentAttributes, List<Attribute> attributes )
-    {
-        List<Attribute> mergedAttributes = Lists.newArrayList();
-        mergedAttributes.addAll( attributes );
-        mergedAttributes.addAll( enrollmentAttributes );
-        return mergedAttributes;
     }
 
     private boolean isDataElementPartOfProgramStage( String dataElementUid, ProgramStage programStage )

@@ -27,6 +27,9 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.error;
+
+import java.util.List;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
@@ -36,13 +39,10 @@ import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
-import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 import org.hisp.dhis.tracker.validation.validator.ValidationUtils;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor checks if a field is not empty in the {@link TrackerBundle}
@@ -65,21 +65,14 @@ public class SetMandatoryFieldExecutor implements RuleActionExecutor<Event>
     @Override
     public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Event event )
     {
-        return checkMandatoryDataElement( event, bundle );
-    }
-
-    private Optional<ProgramRuleIssue> checkMandatoryDataElement( Event event, TrackerBundle bundle )
-    {
         TrackerPreheat preheat = bundle.getPreheat();
         ProgramStage programStage = preheat.getProgramStage( event.getProgramStage() );
         TrackerIdSchemeParams idSchemes = preheat.getIdSchemes();
 
         return ValidationUtils.validateMandatoryDataValue( programStage, event,
-            Lists.newArrayList( idSchemes.toMetadataIdentifier( preheat.getDataElement( fieldUid ) ) ) )
+            List.of( idSchemes.toMetadataIdentifier( preheat.getDataElement( fieldUid ) ) ) )
             .stream()
-            .map( e -> new ProgramRuleIssue( ruleUid,
-                ValidationCode.E1301,
-                Lists.newArrayList( e.getIdentifierOrAttributeValue() ), IssueType.ERROR ) )
+            .map( e -> error( ruleUid, ValidationCode.E1301, e.getIdentifierOrAttributeValue() ) )
             .findAny();
     }
 }

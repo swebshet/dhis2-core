@@ -27,6 +27,8 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.*;
+
 import java.util.Optional;
 import java.util.Set;
 
@@ -42,13 +44,9 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.DataValue;
 import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
-import org.hisp.dhis.tracker.preheat.TrackerPreheat;
-import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor assigns a value to a field if it is empty, otherwise returns an
@@ -65,14 +63,14 @@ public class AssignValueExecutor implements RuleActionExecutor<Event>
 
     private final String value;
 
-    private final String fieldUid;
+    private final String dataElementUid;
 
     private final Set<DataValue> dataValues;
 
     @Override
     public String getField()
     {
-        return fieldUid;
+        return dataElementUid;
     }
 
     @Override
@@ -81,9 +79,7 @@ public class AssignValueExecutor implements RuleActionExecutor<Event>
         Boolean canOverwrite = systemSettingManager
             .getBooleanSetting( SettingKey.RULE_ENGINE_ASSIGN_OVERWRITE );
 
-        TrackerPreheat preheat = bundle.getPreheat();
-
-        DataElement dataElement = bundle.getPreheat().getDataElement( fieldUid );
+        DataElement dataElement = bundle.getPreheat().getDataElement( dataElementUid );
 
         Optional<DataValue> payloadDataValue = dataValues.stream()
             .filter( dv -> dv.getDataElement().isEqualTo( dataElement ) )
@@ -94,19 +90,17 @@ public class AssignValueExecutor implements RuleActionExecutor<Event>
             isEqual( value, payloadDataValue.get().getValue(), dataElement.getValueType() ) )
         {
             addOrOverwriteDataValue( event, bundle );
-            return Optional.of( new ProgramRuleIssue( ruleUid, ValidationCode.E1308,
-                Lists.newArrayList( fieldUid, event.getEvent() ), IssueType.WARNING ) );
+            return Optional.of( warning( ruleUid, ValidationCode.E1308, dataElementUid, event.getEvent() ) );
         }
         else
         {
-            return Optional.of( new ProgramRuleIssue( ruleUid, ValidationCode.E1307,
-                Lists.newArrayList( fieldUid, value ), IssueType.ERROR ) );
+            return Optional.of( error( ruleUid, ValidationCode.E1307, dataElementUid, value ) );
         }
     }
 
     private void addOrOverwriteDataValue( Event event, TrackerBundle bundle )
     {
-        DataElement dataElement = bundle.getPreheat().getDataElement( fieldUid );
+        DataElement dataElement = bundle.getPreheat().getDataElement( dataElementUid );
 
         Optional<DataValue> dataValue = event.getDataValues().stream()
             .filter( dv -> dv.getDataElement().isEqualTo( dataElement ) )

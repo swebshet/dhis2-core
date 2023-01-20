@@ -27,18 +27,17 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.warning;
+
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
 
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Event;
-import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor log as a warning any error raised by rule engine execution
@@ -62,7 +61,6 @@ public class RuleEngineErrorExecutor implements RuleActionExecutor<Event>
     public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Event event )
     {
         return Optional.of(
-            new ProgramRuleIssue( ruleUid, ValidationCode.E1300,
-                Lists.newArrayList( error ), IssueType.WARNING ) );
+            warning( ruleUid, ValidationCode.E1300, error ) );
     }
 }

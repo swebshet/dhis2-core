@@ -27,6 +27,9 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.enrollment;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.error;
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.warning;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,6 +39,7 @@ import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.domain.EnrollmentStatus;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
 
 /**
@@ -44,7 +48,7 @@ import org.hisp.dhis.tracker.validation.ValidationCode;
  *
  * @Author Enrico Colasante
  */
-public interface ErrorWarningExecutor extends RuleActionExecutor
+public interface ErrorWarningExecutor extends RuleActionExecutor<Enrollment>
 {
     boolean isOnComplete();
 
@@ -77,11 +81,11 @@ public interface ErrorWarningExecutor extends RuleActionExecutor
         switch ( getIssueType() )
         {
         case WARNING:
-            return Optional.of( ProgramRuleIssue.warning( ruleAction.getRuleUid(), ValidationCode.E1300,
+            return Optional.of( warning( ruleAction.getRuleUid(), ValidationCode.E1300,
                 validationMessage.toString() ) );
         case ERROR:
             return Optional.of(
-                ProgramRuleIssue.error( ruleAction.getRuleUid(), ValidationCode.E1300, validationMessage.toString() ) );
+                error( ruleAction.getRuleUid(), ValidationCode.E1300, validationMessage.toString() ) );
         default:
             return Optional.empty();
         }

@@ -27,6 +27,9 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.error;
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.warning;
+
 import java.util.Objects;
 import java.util.Optional;
 
@@ -38,8 +41,6 @@ import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 import org.hisp.dhis.tracker.programrule.implementers.RuleActionExecutor;
 import org.hisp.dhis.tracker.validation.ValidationCode;
-
-import com.google.common.collect.Lists;
 
 /**
  * This executor checks if there are errors or warnings in the
@@ -53,35 +54,41 @@ public interface ErrorWarningExecutor extends RuleActionExecutor<Event>
 
     IssueType getIssueType();
 
-    default Optional<ProgramRuleIssue> validateEvent( ErrorWarningRuleAction errorRuleAction,
+    default Optional<ProgramRuleIssue> validateEvent( ErrorWarningRuleAction ruleAction,
         Event event )
     {
         if ( needsToRun( event ) )
         {
-            return Optional.of( parseErrors( errorRuleAction ) );
+            return mapToIssue( ruleAction );
         }
         return Optional.empty();
     }
 
-    private ProgramRuleIssue parseErrors( ErrorWarningRuleAction ruleAction )
+    private Optional<ProgramRuleIssue> mapToIssue( ErrorWarningRuleAction ruleAction )
     {
-
-        String field = ruleAction.getField();
-        String content = ruleAction.getContent();
+        StringBuilder validationMessage = new StringBuilder( ruleAction.getContent() );
         String data = ruleAction.getData();
-
-        StringBuilder stringBuilder = new StringBuilder( content );
         if ( !StringUtils.isEmpty( data ) )
         {
-            stringBuilder.append( " " ).append( data );
+            validationMessage.append( " " ).append( data );
         }
+        String field = ruleAction.getField();
         if ( !StringUtils.isEmpty( field ) )
         {
-            stringBuilder.append( " (" ).append( field ).append( ")" );
+            validationMessage.append( " (" ).append( field ).append( ")" );
         }
 
-        return new ProgramRuleIssue( ruleAction.getRuleUid(), ValidationCode.E1300,
-            Lists.newArrayList( stringBuilder.toString() ), getIssueType() );
+        switch ( getIssueType() )
+        {
+        case WARNING:
+            return Optional.of( warning( ruleAction.getRuleUid(), ValidationCode.E1300,
+                validationMessage.toString() ) );
+        case ERROR:
+            return Optional.of(
+                error( ruleAction.getRuleUid(), ValidationCode.E1300, validationMessage.toString() ) );
+        default:
+            return Optional.empty();
+        }
     }
 
     private boolean needsToRun( Event event )
@@ -90,9 +97,6 @@ public interface ErrorWarningExecutor extends RuleActionExecutor<Event>
         {
             return Objects.equals( EventStatus.COMPLETED, event.getStatus() );
         }
-        else
-        {
-            return true;
-        }
+        return true;
     }
 }

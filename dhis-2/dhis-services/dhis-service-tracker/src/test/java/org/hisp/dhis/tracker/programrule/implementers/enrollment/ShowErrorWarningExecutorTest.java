@@ -30,6 +30,8 @@ package org.hisp.dhis.tracker.programrule.implementers.enrollment;
 import static org.hisp.dhis.tracker.domain.EnrollmentStatus.*;
 import static org.hisp.dhis.tracker.programrule.IssueType.ERROR;
 import static org.hisp.dhis.tracker.programrule.IssueType.WARNING;
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.error;
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.warning;
 import static org.hisp.dhis.tracker.validation.ValidationCode.E1300;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -89,46 +91,46 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     @Test
     void shouldReturnAnErrorWhenAShowErrorActionIsTriggeredForActiveEnrollment()
     {
-        Optional<ProgramRuleIssue> error = showErrorExecutor.executeEnrollmentRuleAction( bundle, activeEnrollment() );
+        Optional<ProgramRuleIssue> error = showErrorExecutor.executeRuleAction( bundle, activeEnrollment() );
 
         assertTrue( error.isPresent() );
-        assertEquals( ProgramRuleIssue.error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
+        assertEquals( error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
     }
 
     @Test
     void shouldReturnAnErrorWhenAShowErrorActionIsTriggeredForCompletedEnrollment()
     {
-        Optional<ProgramRuleIssue> error = showErrorExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = showErrorExecutor.executeRuleAction( bundle,
             completedEnrollment() );
 
         assertTrue( error.isPresent() );
-        assertEquals( ProgramRuleIssue.error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
+        assertEquals( error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
     }
 
     @Test
     void shouldReturnAWarningWhenAShowErrorActionIsTriggeredForActiveEnrollment()
     {
-        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeRuleAction( bundle,
             activeEnrollment() );
 
         assertTrue( warning.isPresent() );
-        assertEquals( ProgramRuleIssue.warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
+        assertEquals( warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
     }
 
     @Test
     void shouldReturnAWarningWhenAShowErrorActionIsTriggeredForCompletedEnrollment()
     {
-        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> warning = showWarningExecutor.executeRuleAction( bundle,
             completedEnrollment() );
 
         assertTrue( warning.isPresent() );
-        assertEquals( ProgramRuleIssue.warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
+        assertEquals( warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
     }
 
     @Test
     void shouldNotReturnAnErrorWhenAShowErrorOnCompleteActionIsTriggeredForActiveEnrollment()
     {
-        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeRuleAction( bundle,
             activeEnrollment() );
 
         assertFalse( error.isPresent() );
@@ -137,17 +139,17 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     @Test
     void shouldReturnAnErrorWhenAShowErrorOnCompleteActionIsTriggeredForCompletedEnrollment()
     {
-        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = errorOnCompleteExecutor.executeRuleAction( bundle,
             completedEnrollment() );
 
         assertTrue( error.isPresent() );
-        assertEquals( ProgramRuleIssue.error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
+        assertEquals( error( RULE_UID, E1300, validationMessage( ERROR ) ), error.get() );
     }
 
     @Test
     void shouldNotReturnAWarningWhenAShowErrorOnCompleteActionIsTriggeredForActiveEnrollment()
     {
-        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeRuleAction( bundle,
             activeEnrollment() );
 
         assertFalse( warning.isPresent() );
@@ -156,11 +158,11 @@ class ShowErrorWarningExecutorTest extends DhisConvenienceTest
     @Test
     void shouldReturnAWarningWhenAShowErrorOnCompleteActionIsTriggeredForCompletedEnrollment()
     {
-        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeEnrollmentRuleAction( bundle,
+        Optional<ProgramRuleIssue> warning = warningOnCompleteExecutor.executeRuleAction( bundle,
             completedEnrollment() );
 
         assertTrue( warning.isPresent() );
-        assertEquals( ProgramRuleIssue.warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
+        assertEquals( warning( RULE_UID, E1300, validationMessage( WARNING ) ), warning.get() );
     }
 
     private List<Enrollment> getEnrollments()

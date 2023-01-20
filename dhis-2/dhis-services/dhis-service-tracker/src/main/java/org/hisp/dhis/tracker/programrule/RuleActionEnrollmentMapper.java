@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
 
+import org.apache.commons.collections4.ListUtils;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
 import org.hisp.dhis.rules.models.RuleActionError;
@@ -61,16 +62,13 @@ import org.hisp.dhis.tracker.programrule.implementers.enrollment.ShowWarningExec
 import org.hisp.dhis.tracker.programrule.implementers.enrollment.ShowWarningOnCompleteExecutor;
 import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
-
-@Service
+@Service( "org.hisp.dhis.tracker.programrule.RuleActionEnrollmentMapper" )
 @RequiredArgsConstructor
 class RuleActionEnrollmentMapper
 {
     private final SystemSettingManager systemSettingManager;
 
-    public Map<TrackerDto, List<RuleActionExecutor<Enrollment>>> mapEnrollmentRuleActions(
-        List<RuleEffects> ruleEffects,
+    public Map<TrackerDto, List<RuleActionExecutor<Enrollment>>> mapRuleEffects( List<RuleEffects> ruleEffects,
         TrackerBundle bundle )
     {
         List<RuleEffects> filteredEffects = filterEnrollments( ruleEffects, bundle );
@@ -91,19 +89,17 @@ class RuleActionEnrollmentMapper
         return ruleEffects
             .stream()
             .collect( Collectors.toMap( e -> bundle.findEnrollmentByUid( e.getTrackerObjectUid() ).get(),
-                e -> mapEnrollmentRuleActions( bundle.findEnrollmentByUid( e.getTrackerObjectUid() ).get(), e,
+                e -> mapRuleEffects( bundle.findEnrollmentByUid( e.getTrackerObjectUid() ).get(), e,
                     bundle ) ) );
     }
 
-    private List<RuleActionExecutor<Enrollment>> mapEnrollmentRuleActions( Enrollment enrollment,
-        RuleEffects ruleEffects,
+    private List<RuleActionExecutor<Enrollment>> mapRuleEffects( Enrollment enrollment, RuleEffects ruleEffects,
         TrackerBundle bundle )
     {
         List<Attribute> payloadTeiAttributes = bundle.findTrackedEntityByUid( enrollment.getTrackedEntity() )
             .map( TrackedEntity::getAttributes )
             .orElse( Collections.emptyList() );
-        List<Attribute> attributes = mergeAttributes( enrollment.getAttributes(),
-            payloadTeiAttributes );
+        List<Attribute> attributes = ListUtils.union( enrollment.getAttributes(), payloadTeiAttributes );
 
         return ruleEffects
             .getRuleEffects()
@@ -157,13 +153,5 @@ class RuleActionEnrollmentMapper
             return new RuleEngineErrorExecutor( ruleId, data );
         }
         return null;
-    }
-
-    private List<Attribute> mergeAttributes( List<Attribute> enrollmentAttributes, List<Attribute> attributes )
-    {
-        List<Attribute> mergedAttributes = Lists.newArrayList();
-        mergedAttributes.addAll( attributes );
-        mergedAttributes.addAll( enrollmentAttributes );
-        return mergedAttributes;
     }
 }

@@ -27,7 +27,8 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
-import static org.hisp.dhis.tracker.programrule.IssueType.WARNING;
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.warning;
+import static org.hisp.dhis.tracker.validation.ValidationCode.E1300;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,7 +38,6 @@ import org.hisp.dhis.DhisConvenienceTest;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
-import org.hisp.dhis.tracker.validation.ValidationCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -69,18 +69,13 @@ class RuleEngineErrorExecutorTest extends DhisConvenienceTest
         Optional<ProgramRuleIssue> warning = ruleEngineErrorExecutor.executeRuleAction( bundle, getEvent() );
 
         assertTrue( warning.isPresent() );
-        warning.ifPresent( w -> {
-            assertEquals( WARNING, w.getIssueType() );
-            assertEquals( RULE_ID, w.getRuleUid() );
-            assertEquals( ValidationCode.E1300, w.getIssueCode() );
-            assertEquals( ERROR_MESSAGE, w.getArgs().get( 0 ) );
-        } );
+        assertEquals( warning( RULE_ID, E1300, ERROR_MESSAGE ), warning.get() );
     }
 
     private Event getEvent()
     {
-        Event event = new Event();
-        event.setEvent( EVENT_ID );
-        return event;
+        return Event.builder()
+            .event( EVENT_ID )
+            .build();
     }
 }

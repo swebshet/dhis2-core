@@ -27,11 +27,14 @@
  */
 package org.hisp.dhis.tracker.programrule.implementers.event;
 
+import static org.hisp.dhis.tracker.programrule.ProgramRuleIssue.error;
+import static org.hisp.dhis.tracker.validation.ValidationCode.E1301;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -41,7 +44,6 @@ import org.hisp.dhis.event.EventStatus;
 import org.hisp.dhis.program.ProgramStage;
 import org.hisp.dhis.program.ProgramStageDataElement;
 import org.hisp.dhis.program.ValidationStrategy;
-import org.hisp.dhis.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.tracker.TrackerIdSchemeParam;
 import org.hisp.dhis.tracker.TrackerIdSchemeParams;
 import org.hisp.dhis.tracker.bundle.TrackerBundle;
@@ -49,16 +51,13 @@ import org.hisp.dhis.tracker.domain.DataValue;
 import org.hisp.dhis.tracker.domain.Event;
 import org.hisp.dhis.tracker.domain.MetadataIdentifier;
 import org.hisp.dhis.tracker.preheat.TrackerPreheat;
-import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
-import org.hisp.dhis.tracker.validation.ValidationCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 @ExtendWith( MockitoExtension.class )
@@ -72,17 +71,13 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
 
     private final static String DATA_ELEMENT_VALUE = "1.0";
 
-    private final static String ATTRIBUTE_VALUE = "23.0";
-
     private final static String RULE_UID = "Rule uid";
 
     private static ProgramStage programStage;
 
     private static DataElement dataElement;
 
-    private TrackedEntityAttribute attribute;
-
-    private final SetMandatoryFieldExecutor mandatoryFieldExecutor = new SetMandatoryFieldExecutor( RULE_UID,
+    private final SetMandatoryFieldExecutor executor = new SetMandatoryFieldExecutor( RULE_UID,
         DATA_ELEMENT_ID );
 
     private TrackerBundle bundle;
@@ -106,22 +101,22 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
     }
 
     @Test
-    void testValidateOkMandatoryFieldsForEvents()
+    void shouldReturnNoErrorWhenMandatoryFieldIsPresentForEnrollment()
     {
         when( preheat.getIdSchemes() ).thenReturn( TrackerIdSchemeParams.builder().build() );
         when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
         when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
             .thenReturn( programStage );
-        bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet() ) );
+        bundle.setEvents( List.of( getEventWithMandatoryValueSet() ) );
 
-        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = executor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet() );
 
         assertTrue( error.isEmpty() );
     }
 
     @Test
-    void testValidateOkMandatoryFieldsForEventsUsingIdSchemeCode()
+    void shouldReturnNoErrorWhenMandatoryFieldIsPresentForEnrollmentsUsingIdSchemeCode()
     {
         TrackerIdSchemeParams idSchemes = TrackerIdSchemeParams.builder()
             .dataElementIdScheme( TrackerIdSchemeParam.CODE )
@@ -130,9 +125,9 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
         when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
         when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
             .thenReturn( programStage );
-        bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet( idSchemes ) ) );
+        bundle.setEvents( List.of( getEventWithMandatoryValueSet( idSchemes ) ) );
 
-        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = executor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet( idSchemes ) );
 
         assertTrue( error.isEmpty() );
@@ -145,21 +140,16 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
         when( preheat.getDataElement( DATA_ELEMENT_ID ) ).thenReturn( dataElement );
         when( preheat.getProgramStage( MetadataIdentifier.ofUid( programStage ) ) )
             .thenReturn( programStage );
-        bundle.setEvents( Lists.newArrayList( getEventWithMandatoryValueSet(), getEventWithMandatoryValueNOTSet() ) );
+        bundle.setEvents( List.of( getEventWithMandatoryValueSet(), getEventWithMandatoryValueNOTSet() ) );
 
-        Optional<ProgramRuleIssue> error = mandatoryFieldExecutor.executeRuleAction( bundle,
+        Optional<ProgramRuleIssue> error = executor.executeRuleAction( bundle,
             getEventWithMandatoryValueSet() );
         assertTrue( error.isEmpty() );
 
-        error = mandatoryFieldExecutor.executeRuleAction( bundle, getEventWithMandatoryValueNOTSet() );
+        error = executor.executeRuleAction( bundle, getEventWithMandatoryValueNOTSet() );
 
         assertFalse( error.isEmpty() );
-        error.ifPresent( e -> {
-            assertEquals( RULE_UID, e.getRuleUid() );
-            assertEquals( ValidationCode.E1301, e.getIssueCode() );
-            assertEquals( IssueType.ERROR, e.getIssueType() );
-            assertEquals( Lists.newArrayList( dataElement.getUid() ), e.getArgs() );
-        } );
+        assertEquals( error( RULE_UID, E1301, dataElement.getUid() ), error.get() );
     }
 
     private Event getEventWithMandatoryValueSet( TrackerIdSchemeParams idSchemes )
@@ -184,11 +174,11 @@ class SetMandatoryFieldExecutorTest extends DhisConvenienceTest
 
     private Event getEventWithMandatoryValueNOTSet()
     {
-        Event event = new Event();
-        event.setEvent( COMPLETED_EVENT_ID );
-        event.setStatus( EventStatus.ACTIVE );
-        event.setProgramStage( MetadataIdentifier.ofUid( programStage ) );
-        return event;
+        return Event.builder()
+            .event( COMPLETED_EVENT_ID )
+            .status( EventStatus.ACTIVE )
+            .programStage( MetadataIdentifier.ofUid( programStage ) )
+            .build();
     }
 
     private Set<DataValue> getActiveEventDataValues( TrackerIdSchemeParams idSchemes )

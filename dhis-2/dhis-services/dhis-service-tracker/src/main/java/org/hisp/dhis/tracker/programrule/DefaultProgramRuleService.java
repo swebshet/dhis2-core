@@ -88,13 +88,12 @@ class DefaultProgramRuleService
                 calculateProgramEventRuleEffects( bundle, preheat ),
                 calculateTrackerEventRuleEffects( bundle, preheat ) ) );
 
-        // This is needed for bunlde side effects process
+        // This is needed for bundle side effects process
         bundle.setRuleEffects( ruleEffects );
 
         // These are needed for rule engine validation
-        bundle.setEnrollmentRuleActionExecutors(
-            ruleActionEnrollmentMapper.mapEnrollmentRuleActions( ruleEffects, bundle ) );
-        bundle.setEventRuleActionExecutors( ruleActionEventMapper.mapEventRuleActions( ruleEffects, bundle ) );
+        bundle.setEnrollmentRuleActionExecutors( ruleActionEnrollmentMapper.mapRuleEffects( ruleEffects, bundle ) );
+        bundle.setEventRuleActionExecutors( ruleActionEventMapper.mapRuleEffects( ruleEffects, bundle ) );
     }
 
     private List<RuleEffects> calculateEnrollmentRuleEffects( TrackerBundle bundle, TrackerPreheat preheat )

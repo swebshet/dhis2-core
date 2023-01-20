@@ -37,6 +37,8 @@ import org.hisp.dhis.tracker.bundle.TrackerBundle;
 import org.hisp.dhis.tracker.domain.Enrollment;
 import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
+import org.hisp.dhis.tracker.programrule.implementers.ShowValidationExecutor;
+import org.hisp.dhis.tracker.programrule.implementers.event.ShowValidationRuleAction;
 
 /**
  * This executor shows errors calculated by Rule Engine.
@@ -44,15 +46,9 @@ import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
  * @Author Enrico Colasante
  */
 @RequiredArgsConstructor
-public class ShowErrorExecutor implements ErrorWarningExecutor
+public class ShowErrorExecutor implements ShowValidationExecutor<Enrollment>
 {
-    private final ErrorWarningRuleAction ruleAction;
-
-    @Override
-    public boolean isOnComplete()
-    {
-        return false;
-    }
+    private final ShowValidationRuleAction ruleAction;
 
     @Override
     public IssueType getIssueType()
@@ -61,8 +57,20 @@ public class ShowErrorExecutor implements ErrorWarningExecutor
     }
 
     @Override
-    public Optional<ProgramRuleIssue> executeEnrollmentRuleAction( TrackerBundle bundle, Enrollment enrollment )
+    public boolean needsToRun( Enrollment enrollment )
     {
-        return validateEnrollment( ruleAction, enrollment );
+        return true;
+    }
+
+    @Override
+    public String getField()
+    {
+        return ruleAction.getField();
+    }
+
+    @Override
+    public Optional<ProgramRuleIssue> executeRuleAction( TrackerBundle bundle, Enrollment enrollment )
+    {
+        return validate( ruleAction, enrollment );
     }
 }

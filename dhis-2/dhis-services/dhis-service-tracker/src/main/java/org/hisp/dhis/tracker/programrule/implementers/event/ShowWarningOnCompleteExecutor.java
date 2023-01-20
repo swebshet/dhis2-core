@@ -39,8 +39,7 @@ import org.hisp.dhis.tracker.programrule.IssueType;
 import org.hisp.dhis.tracker.programrule.ProgramRuleIssue;
 
 /**
- * This executor shows warnings on a completed enrollment or event calculated by
- * Rule Engine.
+ * This executor shows warnings on a completed event calculated by Rule Engine.
  *
  * @Author Enrico Colasante
  */
