@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,28 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.tei;
+package org.hisp.dhis.analytics.tei.query.context.sql;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
+import org.hisp.dhis.analytics.tei.query.EnrolledInProgramCondition;
+import org.hisp.dhis.common.BaseIdentifiableObject;
+import org.springframework.stereotype.Service;
 
-import org.hisp.dhis.analytics.common.CommonParams;
-import org.hisp.dhis.trackedentity.TrackedEntityType;
-
-/**
- * This class is a wrapper for all possible parameters related to a tei. All
- * attributes present here should be correctly typed and ready to be used by the
- * service layers.
- *
- * @author maikel arabori
- */
-@Getter
-@Setter
-@Builder( toBuilder = true )
-public class TeiQueryParams
+@Service
+public class ProgramQueryContextEnricher implements SqlQueryContextEnricher
 {
-    private final TrackedEntityType trackedEntityType;
-
-    private final CommonParams commonParams;
-
-    public String getTetTableSuffix()
+    @Override
+    public SqlQueryContext enrichContext( SqlQueryContext sqlQueryContext )
     {
-        return trackedEntityType.getUid().toLowerCase();
+        SqlQueryContext.SqlQueryContextBuilder sqlQueryContextBuilder = sqlQueryContext.toBuilder();
+
+        sqlQueryContext.getTeiQueryParams()
+            .getCommonParams()
+            .getPrograms().stream()
+            .map( BaseIdentifiableObject::getUid )
+            .map( EnrolledInProgramCondition::of )
+            .forEach( condition -> sqlQueryContextBuilder.whereClause( Pair.of( "PROGRAM_GROUP", condition ) ) );
+
+        return sqlQueryContextBuilder.build();
     }
 }

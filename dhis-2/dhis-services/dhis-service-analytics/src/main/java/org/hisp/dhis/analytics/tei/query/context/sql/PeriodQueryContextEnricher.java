@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,35 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.tei;
+package org.hisp.dhis.analytics.tei.query.context.sql;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.Collection;
 
-import org.hisp.dhis.analytics.common.CommonParams;
-import org.hisp.dhis.trackedentity.TrackedEntityType;
+import lombok.RequiredArgsConstructor;
 
-/**
- * This class is a wrapper for all possible parameters related to a tei. All
- * attributes present here should be correctly typed and ready to be used by the
- * service layers.
- *
- * @author maikel arabori
- */
-@Getter
-@Setter
-@Builder( toBuilder = true )
-public class TeiQueryParams
+import org.apache.commons.lang3.tuple.Pair;
+import org.hisp.dhis.analytics.tei.query.PeriodCondition;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class PeriodQueryContextEnricher implements SqlQueryContextEnricher
 {
-    private final TrackedEntityType trackedEntityType;
 
-    private final CommonParams commonParams;
-
-    public String getTetTableSuffix()
+    @Override
+    public SqlQueryContext enrichContext( SqlQueryContext sqlQueryContext )
     {
-        return trackedEntityType.getUid().toLowerCase();
+
+        SqlQueryContext.SqlQueryContextBuilder sqlQueryContextBuilder = sqlQueryContext.toBuilder();
+
+        sqlQueryContext.getTeiQueryParams()
+            .getCommonParams().getDimensionIdentifiers()
+            .stream()
+            .flatMap( Collection::stream )
+            .filter( d -> d.getDimension().isPeriodDimension() )
+            .map( periodDimension -> PeriodCondition.of( periodDimension, sqlQueryContext ) )
+            .forEach( a -> sqlQueryContextBuilder.whereClause( Pair.of( "PERIOD_GROUP", a ) ) );
+
+        return sqlQueryContextBuilder.build();
     }
 }

@@ -48,7 +48,8 @@ import java.util.function.BiFunction;
 import lombok.RequiredArgsConstructor;
 
 import org.hisp.dhis.analytics.common.ValueTypeMapping;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlParameterManager;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 import org.hisp.dhis.common.IllegalQueryException;
 import org.hisp.dhis.common.QueryOperator;
 
@@ -68,16 +69,16 @@ public class BinaryConditionRenderer extends BaseRenderable
     }
 
     public static BinaryConditionRenderer of( String field, QueryOperator queryOperator, List<String> values,
-        ValueTypeMapping valueTypeMapping, QueryContext queryContext )
+        ValueTypeMapping valueTypeMapping, SqlQueryContext sqlQueryContext )
     {
-        return BinaryConditionRenderer.of( () -> field, queryOperator, values, valueTypeMapping, queryContext );
+        return BinaryConditionRenderer.of( () -> field, queryOperator, values, valueTypeMapping, sqlQueryContext );
     }
 
     public static BinaryConditionRenderer of( Renderable field, QueryOperator queryOperator, List<String> values,
-        ValueTypeMapping valueTypeMapping, QueryContext queryContext )
+        ValueTypeMapping valueTypeMapping, SqlQueryContext sqlQueryContext )
     {
         return BinaryConditionRenderer.of( field, queryOperator,
-            ConstantValuesRenderer.of( values, valueTypeMapping, queryContext ) );
+            ConstantValuesRenderer.of( values, valueTypeMapping, sqlQueryContext ) );
     }
 
     private static final Collection<QueryOperator> comparisonOperators = Arrays.asList( GT, GE, LT, LE );

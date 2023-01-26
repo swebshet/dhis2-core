@@ -38,18 +38,18 @@ public class From implements Renderable
 {
     private final Renderable mainTable;
 
-    private final JoinsWithConditions joinsWithConditions;
+    private final LeftJoins leftJoins;
 
     @Override
     public String render()
     {
-        return "from " + mainTable.render() + SPACE + joinsWithConditions.render();
+        return "from " + mainTable.render() + SPACE + leftJoins.render();
     }
 
     public static From ofSingleTableAndAlias( String table, String alias )
     {
         return From.of(
             Table.ofStrings( table, alias ),
-            JoinsWithConditions.of( Collections.emptyList() ) );
+            LeftJoins.of( Collections.emptyList() ) );
     }
 }

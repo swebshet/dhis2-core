@@ -40,14 +40,14 @@ import org.hisp.dhis.analytics.common.query.BaseRenderable;
 import org.hisp.dhis.analytics.common.query.BinaryConditionRenderer;
 import org.hisp.dhis.analytics.common.query.Field;
 import org.hisp.dhis.analytics.common.query.OrCondition;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 
 @RequiredArgsConstructor( staticName = "of" )
 public class ProgramAttributeCondition extends BaseRenderable
 {
     private final DimensionIdentifier<DimensionParam> dimensionIdentifier;
 
-    private final QueryContext queryContext;
+    private final SqlQueryContext queryContext;
 
     @Override
     public String render()

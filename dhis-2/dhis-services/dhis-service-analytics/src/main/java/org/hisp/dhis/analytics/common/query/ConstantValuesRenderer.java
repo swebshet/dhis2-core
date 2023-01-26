@@ -43,7 +43,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import org.hisp.dhis.analytics.common.ValueTypeMapping;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 
 @Getter
 @RequiredArgsConstructor( staticName = "of" )
@@ -53,14 +53,14 @@ public class ConstantValuesRenderer extends BaseRenderable
 
     private final ValueTypeMapping valueTypeMapping;
 
-    private final QueryContext queryContext;
+    private final SqlQueryContext sqlQueryContext;
 
     private final Function<String, String> argumentTransformer;
 
     public static ConstantValuesRenderer of( Object values, ValueTypeMapping valueTypeMapping,
-        QueryContext queryContext )
+        SqlQueryContext sqlQueryContext )
     {
-        return of( values, valueTypeMapping, queryContext, Function.identity() );
+        return of( values, valueTypeMapping, sqlQueryContext, Function.identity() );
     }
 
     @Override
@@ -96,10 +96,10 @@ public class ConstantValuesRenderer extends BaseRenderable
 
         if ( valuesAsStringList.size() > 1 )
         {
-            return queryContext.bindParamAndGetIndex(
+            return sqlQueryContext.getSqlParameterManager().bindParamAndGetIndex(
                 valueTypeMapping.convertMany( valuesAsStringList ) );
         }
-        return queryContext.bindParamAndGetIndex(
+        return sqlQueryContext.getSqlParameterManager().bindParamAndGetIndex(
             valueTypeMapping.convertSingle( valuesAsStringList.get( 0 ) ) );
     }
 
@@ -126,6 +126,6 @@ public class ConstantValuesRenderer extends BaseRenderable
 
     public ConstantValuesRenderer withArgumentTransformer( UnaryOperator<String> valueTransformer )
     {
-        return of( values, valueTypeMapping, queryContext, valueTransformer );
+        return of( values, valueTypeMapping, sqlQueryContext, valueTransformer );
     }
 }

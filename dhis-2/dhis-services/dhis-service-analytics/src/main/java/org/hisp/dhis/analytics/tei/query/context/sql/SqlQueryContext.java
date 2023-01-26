@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2004, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,35 +25,40 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.common.query;
-
-import static java.util.stream.Collectors.joining;
-import static org.apache.commons.lang3.StringUtils.EMPTY;
+package org.hisp.dhis.analytics.tei.query.context.sql;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.Singular;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.hisp.dhis.analytics.common.query.Field;
+import org.hisp.dhis.analytics.common.query.LeftJoin;
+import org.hisp.dhis.analytics.common.query.Renderable;
+import org.hisp.dhis.analytics.tei.TeiQueryParams;
 
-@RequiredArgsConstructor( staticName = "of" )
-public class JoinsWithConditions extends BaseRenderable
+@Builder( toBuilder = true )
+@Data
+public class SqlQueryContext
 {
+    public static final SqlQueryContext EMPTY_SQL_CONTEXT = SqlQueryContext.builder().build();
+
     @Singular
-    private final List<Pair<Renderable, Renderable>> tablesWithJoinConditions;
+    private final List<Field> fields;
 
-    @Override
-    public String render()
-    {
-        return tablesWithJoinConditions.stream()
-            .map( this::renderPair )
-            .collect( joining( EMPTY ) );
-    }
+    @Singular
+    private final List<LeftJoin> leftJoins;
 
-    private String renderPair( Pair<Renderable, Renderable> tableWithJoinCondition )
-    {
-        return " left join " + tableWithJoinCondition.getKey().render() + " on "
-            + tableWithJoinCondition.getValue().render();
-    }
+    @Singular
+    private final List<Pair<String, Renderable>> whereClauses;
+
+    @Singular
+    private final List<Renderable> orderClauses;
+
+    private final TeiQueryParams teiQueryParams;
+
+    private final SqlParameterManager sqlParameterManager;
+
 }

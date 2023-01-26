@@ -39,14 +39,14 @@ import org.hisp.dhis.analytics.common.dimension.DimensionIdentifier;
 import org.hisp.dhis.analytics.common.dimension.DimensionParam;
 import org.hisp.dhis.analytics.common.query.BaseRenderable;
 import org.hisp.dhis.analytics.common.query.Renderable;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 
 @RequiredArgsConstructor
 public abstract class AbstractCondition extends BaseRenderable
 {
     private final DimensionIdentifier<DimensionParam> dimensionIdentifier;
 
-    private final QueryContext queryContext;
+    private final SqlQueryContext sqlQueryContext;
 
     @Override
     public String render()
@@ -91,8 +91,8 @@ public abstract class AbstractCondition extends BaseRenderable
         return "(select *" +
             " from (select *, row_number() over (partition by trackedentityinstanceuid order by enrollmentdate desc) as rn"
             +
-            " from " + ANALYTICS_TEI_ENR + queryContext.getTetTableSuffix() +
-            " where programuid = " + queryContext.bindParamAndGetIndex( programUid ) +
+            " from " + ANALYTICS_TEI_ENR + sqlQueryContext.getTeiQueryParams().getTetTableSuffix() +
+            " where programuid = " + sqlQueryContext.getSqlParameterManager().bindParamAndGetIndex( programUid ) +
             " and " + TEI_ALIAS + ".trackedentityinstanceuid = trackedentityinstanceuid) innermost_enr" +
             " where innermost_enr.rn = 1) " + ENR_ALIAS;
     }
@@ -120,8 +120,8 @@ public abstract class AbstractCondition extends BaseRenderable
     {
         return "(select *" +
             " from (select *, row_number() over (partition by programinstanceuid order by executiondate desc) as rn" +
-            " from " + ANALYTICS_TEI_EVT + queryContext.getTetTableSuffix() +
-            " where programstageuid = " + queryContext.bindParamAndGetIndex( programStageUid ) +
+            " from " + ANALYTICS_TEI_EVT + sqlQueryContext.getTeiQueryParams().getTetTableSuffix() +
+            " where programstageuid = " + sqlQueryContext.getSqlParameterManager().bindParamAndGetIndex( programStageUid ) +
             " and " + TEI_ALIAS + ".trackedentityinstanceuid = trackedentityinstanceuid) innermost_enr" +
             " where innermost_enr.rn = 1) " + EVT_ALIAS;
     }

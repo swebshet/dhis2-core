@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,37 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.tei;
+package org.hisp.dhis.analytics.tei.query.context.sql;
 
-import lombok.Builder;
+import java.util.HashMap;
+import java.util.Map;
+
 import lombok.Getter;
-import lombok.Setter;
 
-import org.hisp.dhis.analytics.common.CommonParams;
-import org.hisp.dhis.trackedentity.TrackedEntityType;
+import org.springframework.web.context.annotation.RequestScope;
 
 /**
- * This class is a wrapper for all possible parameters related to a tei. All
- * attributes present here should be correctly typed and ready to be used by the
- * service layers.
- *
- * @author maikel arabori
+ * @author Jan-Gerke Gresch
  */
-@Getter
-@Setter
-@Builder( toBuilder = true )
-public class TeiQueryParams
+@RequestScope
+public class SqlParameterManager
 {
-    private final TrackedEntityType trackedEntityType;
+    private int parameterIndex = 0;
 
-    private final CommonParams commonParams;
+    @Getter
+    private final Map<String, Object> parametersByPlaceHolder = new HashMap<>();
 
-    public String getTetTableSuffix()
+    /**
+     * adds a parameter to the map and returns the sql placeholder of the
+     * parameter
+     *
+     * @param param the parameter to add
+     * @return the sql placeholder of the parameter
+     */
+    public String bindParamAndGetIndex( Object param )
     {
-        return trackedEntityType.getUid().toLowerCase();
+        parameterIndex++;
+        parametersByPlaceHolder.put( String.valueOf( parameterIndex ), param );
+        return ":" + parameterIndex;
     }
 }

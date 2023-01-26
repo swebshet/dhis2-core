@@ -35,16 +35,16 @@ import org.hisp.dhis.analytics.common.dimension.DimensionParam;
 import org.hisp.dhis.analytics.common.dimension.DimensionParamItem;
 import org.hisp.dhis.analytics.common.query.BinaryConditionRenderer;
 import org.hisp.dhis.analytics.common.query.Renderable;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 
 public class EventDataValueCondition extends AbstractCondition
 {
-    private final QueryContext queryContext;
+    private final SqlQueryContext queryContext;
 
     private final DimensionIdentifier<DimensionParam> dimensionIdentifier;
 
     private EventDataValueCondition( DimensionIdentifier<DimensionParam> dimensionIdentifier,
-        QueryContext queryContext )
+        SqlQueryContext queryContext )
     {
         super( dimensionIdentifier, queryContext );
         this.queryContext = queryContext;
@@ -53,7 +53,7 @@ public class EventDataValueCondition extends AbstractCondition
 
     public static EventDataValueCondition of(
         DimensionIdentifier<DimensionParam> dimensionIdentifier,
-        QueryContext queryContext )
+        SqlQueryContext queryContext )
     {
         return new EventDataValueCondition( dimensionIdentifier, queryContext );
     }

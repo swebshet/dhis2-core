@@ -62,7 +62,7 @@ import org.hisp.dhis.analytics.common.query.AndCondition;
 import org.hisp.dhis.analytics.common.query.BaseRenderable;
 import org.hisp.dhis.analytics.common.query.Field;
 import org.hisp.dhis.analytics.common.query.From;
-import org.hisp.dhis.analytics.common.query.JoinsWithConditions;
+import org.hisp.dhis.analytics.common.query.LeftJoins;
 import org.hisp.dhis.analytics.common.query.LimitOffset;
 import org.hisp.dhis.analytics.common.query.OrCondition;
 import org.hisp.dhis.analytics.common.query.Order;
@@ -70,7 +70,6 @@ import org.hisp.dhis.analytics.common.query.Renderable;
 import org.hisp.dhis.analytics.common.query.Select;
 import org.hisp.dhis.analytics.common.query.Where;
 import org.hisp.dhis.analytics.tei.TeiQueryParams;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
 import org.hisp.dhis.common.BaseIdentifiableObject;
 
 /**
@@ -172,13 +171,13 @@ public class TeiSqlQuery extends BaseRenderable
 
     private From getFrom()
     {
-        JoinsWithConditions joinsWithConditions = JoinsWithConditions.of(
+        LeftJoins leftJoins = LeftJoins.of(
             Stream.concat(
                 queryContext.getSortingContext().getLeftJoins().stream(),
                 queryContext.getProgramIndicatorContext().getLeftJoins().stream() )
                 .collect( toList() ) );
 
-        return From.of( queryContext.getMainTable(), joinsWithConditions );
+        return From.of( queryContext.getMainTable(), leftJoins );
     }
 
     private Where getWhere()

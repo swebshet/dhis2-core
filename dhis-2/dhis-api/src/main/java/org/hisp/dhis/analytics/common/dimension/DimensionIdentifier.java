@@ -33,6 +33,7 @@ import static org.hisp.dhis.analytics.common.dimension.DimensionIdentifier.Dimen
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.With;
 
 import org.hisp.dhis.common.UidObject;
 import org.hisp.dhis.program.Program;
@@ -52,6 +53,15 @@ public class DimensionIdentifier<D extends UidObject>
     private final ElementWithOffset<ProgramStage> programStage;
 
     private final D dimension;
+
+    @With
+    private final String groupId;
+
+    public static <D extends UidObject> DimensionIdentifier<D> of( ElementWithOffset<Program> program,
+        ElementWithOffset<ProgramStage> programStage, D ofObject )
+    {
+        return DimensionIdentifier.of( program, programStage, ofObject, null );
+    }
 
     public DimensionIdentifierType getDimensionIdentifierType()
     {

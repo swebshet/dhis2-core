@@ -39,7 +39,6 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.hisp.dhis.analytics.common.ValueTypeMapping;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
 import org.hisp.dhis.common.IllegalQueryException;
 import org.hisp.dhis.common.QueryOperator;
 import org.junit.jupiter.api.Test;

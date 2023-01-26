@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -263,9 +264,11 @@ public class CommonQueryRequestMapper
         List<String> dimensions, DimensionParamType dimensionParamType, CommonQueryRequest queryRequest,
         List<Program> programs, List<OrganisationUnit> userOrgUnits )
     {
+        String groupId = UUID.randomUUID().toString();
         return dimensions.stream()
             .map( dimensionAsString -> toDimensionIdentifier( dimensionAsString, dimensionParamType, queryRequest,
                 programs, userOrgUnits ) )
+            .map( dimensionIdentifier -> dimensionIdentifier.withGroupId(groupId))
             .collect( toList() );
     }
 

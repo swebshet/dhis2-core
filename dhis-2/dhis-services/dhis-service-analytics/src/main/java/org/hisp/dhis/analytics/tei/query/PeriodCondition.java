@@ -47,24 +47,24 @@ import org.hisp.dhis.analytics.common.query.BinaryConditionRenderer;
 import org.hisp.dhis.analytics.common.query.ConstantValuesRenderer;
 import org.hisp.dhis.analytics.common.query.Field;
 import org.hisp.dhis.analytics.common.query.Renderable;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 import org.hisp.dhis.common.QueryOperator;
 import org.hisp.dhis.period.Period;
 import org.hisp.dhis.util.DateUtils;
 
 public class PeriodCondition extends AbstractCondition
 {
-    private final QueryContext queryContext;
+    private final SqlQueryContext sqlQueryContext;
 
     private final Pair<Date, Date> interval;
 
     private final TimeField timeField;
 
     private PeriodCondition( DimensionIdentifier<DimensionParam> dimensionIdentifier,
-        QueryContext queryContext )
+        SqlQueryContext sqlQueryContext )
     {
-        super( dimensionIdentifier, queryContext );
-        this.queryContext = queryContext;
+        super( dimensionIdentifier, sqlQueryContext );
+        this.sqlQueryContext = sqlQueryContext;
 
         Date minDate = dimensionIdentifier.getDimension().getDimensionalObject().getItems().stream()
             .map( Period.class::cast )
@@ -93,9 +93,9 @@ public class PeriodCondition extends AbstractCondition
     }
 
     public static PeriodCondition of( DimensionIdentifier<DimensionParam> dimensionIdentifier,
-        QueryContext queryContext )
+        SqlQueryContext sqlQueryContext )
     {
-        return new PeriodCondition( dimensionIdentifier, queryContext );
+        return new PeriodCondition( dimensionIdentifier, sqlQueryContext );
     }
 
     @Override
@@ -108,13 +108,13 @@ public class PeriodCondition extends AbstractCondition
                     QueryOperator.GE,
                     ConstantValuesRenderer.of(
                         getMediumDateString( interval.getLeft() ),
-                        DATE, queryContext ) ),
+                        DATE, sqlQueryContext) ),
                 BinaryConditionRenderer.of(
                     Field.of( TEI_ALIAS, timeField::getField, EMPTY ),
                     QueryOperator.LT,
                     ConstantValuesRenderer.of(
                         getMediumDateString( interval.getRight() ),
-                        DATE, queryContext ) ) ) );
+                        DATE, sqlQueryContext) ) ) );
     }
 
     @Override
@@ -138,12 +138,12 @@ public class PeriodCondition extends AbstractCondition
                     QueryOperator.GE,
                     ConstantValuesRenderer.of(
                         getMediumDateString( interval.getLeft() ),
-                        DATE, queryContext ) ),
+                        DATE, sqlQueryContext) ),
                 BinaryConditionRenderer.of(
                     Field.of( alias, timeField::getField, null ),
                     QueryOperator.LT,
                     ConstantValuesRenderer.of(
                         getMediumDateString( interval.getRight() ),
-                        DATE, queryContext ) ) ) );
+                        DATE, sqlQueryContext) ) ) );
     }
 }

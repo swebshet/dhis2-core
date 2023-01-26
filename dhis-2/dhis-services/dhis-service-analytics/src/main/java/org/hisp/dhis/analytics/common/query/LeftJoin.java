@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,21 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.tei;
+package org.hisp.dhis.analytics.common.query;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 
-import org.hisp.dhis.analytics.common.CommonParams;
-import org.hisp.dhis.trackedentity.TrackedEntityType;
-
-/**
- * This class is a wrapper for all possible parameters related to a tei. All
- * attributes present here should be correctly typed and ready to be used by the
- * service layers.
- *
- * @author maikel arabori
- */
-@Getter
-@Setter
-@Builder( toBuilder = true )
-public class TeiQueryParams
+@RequiredArgsConstructor( staticName = "of" )
+public class LeftJoin extends BaseRenderable
 {
-    private final TrackedEntityType trackedEntityType;
 
-    private final CommonParams commonParams;
+    private final Renderable tableOrSubQuery;
 
-    public String getTetTableSuffix()
+    private final Renderable joinCondition;
+
+    @Override
+    public String render()
     {
-        return trackedEntityType.getUid().toLowerCase();
+        return "left join " + tableOrSubQuery.render() + " on " + joinCondition.render();
     }
 }

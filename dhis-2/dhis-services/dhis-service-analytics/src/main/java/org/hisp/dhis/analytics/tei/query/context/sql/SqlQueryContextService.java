@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004-2022, University of Oslo
+ * Copyright (c) 2004-2023, University of Oslo
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,33 +25,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.hisp.dhis.analytics.tei;
+package org.hisp.dhis.analytics.tei.query.context.sql;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.List;
 
-import org.hisp.dhis.analytics.common.CommonParams;
-import org.hisp.dhis.trackedentity.TrackedEntityType;
+import lombok.RequiredArgsConstructor;
 
-/**
- * This class is a wrapper for all possible parameters related to a tei. All
- * attributes present here should be correctly typed and ready to be used by the
- * service layers.
- *
- * @author maikel arabori
- */
-@Getter
-@Setter
-@Builder( toBuilder = true )
-public class TeiQueryParams
+import org.hisp.dhis.analytics.tei.TeiQueryParams;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class SqlQueryContextService
 {
-    private final TrackedEntityType trackedEntityType;
+    private final List<SqlQueryContextEnricher> providers;
+    private final SqlParameterManager sqlParameterManager;
 
-    private final CommonParams commonParams;
-
-    public String getTetTableSuffix()
+    /**
+     * Builds a SqlQueryContext from the given TeiQueryParams.
+     *
+     * @param teiQueryParams
+     * @return a SqlQueryContext
+     */
+    public SqlQueryContext buildSqlQueryContext( TeiQueryParams teiQueryParams )
     {
-        return trackedEntityType.getUid().toLowerCase();
+        SqlQueryContext sqlQueryContext = SqlQueryContext.builder()
+                .teiQueryParams(teiQueryParams)
+                .sqlParameterManager(sqlParameterManager)
+                .build();
+
+        for ( SqlQueryContextEnricher provider : providers )
+        {
+            sqlQueryContext = provider.enrichContext( sqlQueryContext );
+        }
+
+        return sqlQueryContext;
     }
+
 }

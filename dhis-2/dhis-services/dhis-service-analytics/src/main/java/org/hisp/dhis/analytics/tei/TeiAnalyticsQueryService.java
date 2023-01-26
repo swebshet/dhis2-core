@@ -45,8 +45,9 @@ import org.hisp.dhis.analytics.common.QueryExecutor;
 import org.hisp.dhis.analytics.common.SqlQuery;
 import org.hisp.dhis.analytics.common.SqlQueryResult;
 import org.hisp.dhis.analytics.tei.query.TeiSqlQuery;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
-import org.hisp.dhis.analytics.tei.query.context.QueryContextService;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContextService;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryProvider;
 import org.hisp.dhis.common.Grid;
 import org.hisp.dhis.common.QueryRuntimeException;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -68,7 +69,7 @@ public class TeiAnalyticsQueryService
 
     private final GridAdaptor gridAdaptor;
 
-    private final QueryContextService queryContextService;
+    private final SqlQueryContextService queryContextService;
 
     /**
      * This method will create a query, based on the teiParams, and execute it
@@ -85,13 +86,13 @@ public class TeiAnalyticsQueryService
         notNull( teiQueryParams, "The 'teiQueryParams' must not be null" );
         notNull( commonQueryRequest, "The 'commonQueryRequest' must not be null" );
 
-        QueryContext queryContext = queryContextService.of( teiQueryParams );
+        SqlQueryContext queryContext = queryContextService.buildSqlQueryContext( teiQueryParams );
         Optional<SqlQueryResult> result = Optional.empty();
         long rowsCount = 0;
 
         try
         {
-            result = Optional.of( queryExecutor.find( new TeiSqlQuery( queryContext ).get() ) );
+            result = Optional.of( queryExecutor.find( SqlQueryProvider.of( queryContext).provideSqlQuery()) ) );
 
             AnalyticsPagingParams pagingParams = teiQueryParams.getCommonParams().getPagingParams();
 

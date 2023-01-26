@@ -42,7 +42,7 @@ import org.hisp.dhis.analytics.common.query.AndCondition;
 import org.hisp.dhis.analytics.common.query.BinaryConditionRenderer;
 import org.hisp.dhis.analytics.common.query.Field;
 import org.hisp.dhis.analytics.common.query.Renderable;
-import org.hisp.dhis.analytics.tei.query.context.QueryContext;
+import org.hisp.dhis.analytics.tei.query.context.sql.SqlQueryContext;
 
 /**
  * Provides methods responsible for generating SQL statements on top of
@@ -54,10 +54,10 @@ public class OrganisationUnitCondition extends AbstractCondition
 
     private final DimensionIdentifier<DimensionParam> dimensionIdentifier;
 
-    private final QueryContext queryContext;
+    private final SqlQueryContext queryContext;
 
     private OrganisationUnitCondition( DimensionIdentifier<DimensionParam> dimensionIdentifier,
-        QueryContext queryContext )
+                                       SqlQueryContext queryContext )
     {
         super( dimensionIdentifier, queryContext );
         this.queryContext = queryContext;
@@ -65,7 +65,7 @@ public class OrganisationUnitCondition extends AbstractCondition
     }
 
     public static OrganisationUnitCondition of(
-        DimensionIdentifier<DimensionParam> dimensionIdentifier, QueryContext queryContext )
+        DimensionIdentifier<DimensionParam> dimensionIdentifier, SqlQueryContext queryContext )
     {
         return new OrganisationUnitCondition( dimensionIdentifier, queryContext );
     }
